@@ -1,4 +1,4 @@
-export type AppTab = "sprint" | "kana" | "grammar" | "numbers" | "vocab" | "sensei";
+export type AppTab = "path" | "sprint" | "kana" | "grammar" | "numbers" | "vocab" | "sensei";
 
 export interface CramBlock {
   id: string;

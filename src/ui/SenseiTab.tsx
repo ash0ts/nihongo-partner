@@ -7,6 +7,8 @@ import { JapaneseLineView } from "./RubyText";
 interface SenseiTabProps {
   mode: DisplayMode;
   slowAudio: boolean;
+  /** Scenario to open first (deep link from the Study Path roleplay units). */
+  initialScenarioId?: string | null;
 }
 
 interface TutorStatus {
@@ -23,9 +25,12 @@ interface ChatTurn {
   coachTip?: string;
 }
 
-export function SenseiTab({ mode, slowAudio }: SenseiTabProps) {
+export function SenseiTab({ mode, slowAudio, initialScenarioId = null }: SenseiTabProps) {
   // Offline Guided Roleplay state
-  const [scenarioIdx, setScenarioIdx] = useState(0);
+  const [scenarioIdx, setScenarioIdx] = useState(() => {
+    const idx = initialScenarioId ? ALL_ROLEPLAYS.findIndex((r) => r.id === initialScenarioId) : -1;
+    return idx >= 0 ? idx : 0;
+  });
   const [turnIdx, setTurnIdx] = useState(0);
   const [selectedChoiceIdx, setSelectedChoiceIdx] = useState<number | null>(null);
 

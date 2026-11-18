@@ -25,14 +25,16 @@ That gives you a clean engineering priority order for today:
 
 ---
 
-## 1. Hour-by-Hour Cram Schedule
+## 1. Suggested Pacing Over the Study Path
 
-- **Hour 1 (0:00–1:00) — Hiragana Reading Blitz:** Scan the 46 base characters down the 5-vowel columns, learn the 4 voicing switches (`゛`/`゜`) + small `ゃ/ゅ/ょ` + small `っ`, then drill the 5 Hiragana lookalike groups (`は/ほ`, `さ/き`, `ね/れ/わ`, `ぬ/め`, `る/ろ`) until >= 90% accuracy.
-- **Hour 2 (1:00–2:00) — Katakana + Real L1–L2 Loanwords:** Lock in the `シ/ン` vs `ツ/ソ` stroke-angle rule, `ウ/ワ/フ`, `マ/ム/ア`, and long-vowel dash `ー`. Immediately decode the 18 Lesson 1–2 katakana vocab words (`アメリカ`, `イギリス`, `コンピューター`, `ビジネス`, `スマホ`, `コンビニ`, `メニュー`, `トイレ`).
-- **Hour 3 (2:00–3:00) — Greetings Register & Lesson 1 Syntax:** Master `[Topic は] Y です`, subject omission, `〜ですか` questions, right-headed `Noun1 の Noun2` chains, and rehearse your 5-sentence Japanese self-introduction aloud.
-- **Hour 4 (3:00–4:00) — Numbers, 10^4 `まん`, Time, Age & Yen Lab:** Memorize ONLY the phonetic shifts (`300/600/800`, `3000/8000`, `10,000 = いちまん`, `4:00 よじ`, `7:00 しちじ`, `9:00 くじ`, `-ぷん` on `1/3/4/6/8/10`, `4th year = よねんせい`, `20 yrs = はたち`) and run 20 rapid-fire prompts.
-- **Hour 5 (4:00–5:00) — Lesson 2 Pointers (`こそあど`), `も`, `じゃないです`, `ね/よ` (No-Romaji Mode!):** Turn romaji OFF in the app. Drill `これ` vs `この+N` vs `ここ/そこ/あそこ`, `だれの+N`, `も` replacing `は`, `じゃないです`, and `ね` vs `よ`.
-- **Hour 6 (5:00–6:00) — Page 81 Classroom Survival, Roleplay & Lesson 3 Preview:** Lock in spoken classroom recovery lines (`ゆっくり いってください`, `もういちど いってください`, `わかりません`), run the self-intro and shopping/restaurant roleplays, and spend 15 minutes skimming the Lesson 3 verb + particle preview at the bottom of this guide.
+The app's **Study Path** tab is the thing to follow. It is 34 units, each one a teach card, a short drill, a checkpoint at 80%, and a six-item review of earlier material. The hour labels below are a pacing guide for the same sequence, not a timer: finish a unit early and move on, fall behind and keep going. Nothing locks on the clock, and you can skip a checkpoint you keep missing; the unit stays flagged until you return.
+
+- **Hour 1 — Hiragana Reading Blitz** (path units `kana-rows-1..3`, `kana-voicing`): Scan the 46 base characters down the 5-vowel columns, learn the 4 voicing switches (`゛`/`゜`) + small `ゃ/ゅ/ょ` + small `っ`, then drill the 5 Hiragana lookalike groups (`は/ほ`, `さ/き`, `ね/れ/わ`, `ぬ/め`, `る/ろ`) until >= 90% accuracy.
+- **Hour 2 — Katakana + Real L1–L2 Loanwords** (`kana-contrasts`, `kana-loanwords`, then Lesson 0 units through `L00-checkpoint`): Lock in the `シ/ン` vs `ツ/ソ` stroke-angle rule, `ウ/ワ/フ`, `マ/ム/ア`, and long-vowel dash `ー`. Immediately decode the 18 Lesson 1–2 katakana vocab words (`アメリカ`, `イギリス`, `コンピューター`, `ビジネス`, `スマホ`, `コンビニ`, `メニュー`, `トイレ`).
+- **Hour 3 — Lesson 1 Syntax** (`L01-g-*`, `L01-v-1..4`): Master `[Topic は] Y です`, subject omission, `〜ですか` questions, right-headed `Noun1 の Noun2` chains, and rehearse your 5-sentence Japanese self-introduction aloud.
+- **Hour 4 — Numbers, Time, Age & Yen** (`L01-counters`, `L01-roleplay`, `L01-checkpoint`, then `L02-counters` when you reach it): Memorize ONLY the phonetic shifts (`300/600/800`, `3000/8000`, `10,000 = いちまん`, `4:00 よじ`, `7:00 しちじ`, `9:00 くじ`, `-ぷん` on `1/3/4/6/8/10`, `4th year = よねんせい`, `20 yrs = はたち`) and run 20 rapid-fire prompts.
+- **Hour 5 — Lesson 2 Pointers (`こそあど`), `も`, `じゃないです`, `ね/よ`** (`L02-g-*`, `L02-v-1..2`; switch the header to L3 Class Mode here): Turn romaji OFF in the app. Drill `これ` vs `この+N` vs `ここ/そこ/あそこ`, `だれの+N`, `も` replacing `は`, `じゃないです`, and `ね` vs `よ`.
+- **Hour 6 — Classroom Survival, Roleplay, Mock & Lesson 3 Preview** (`L02-classroom`, `L02-roleplay`, `L02-checkpoint`, `cumulative-L00-L02`, optional `preview-L03`): Lock in spoken classroom recovery lines (`ゆっくり いってください`, `もういちど いってください`, `わかりません`), run the self-intro and shopping/restaurant roleplays, and spend 15 minutes skimming the Lesson 3 verb + particle preview at the bottom of this guide.
 
 ---
 

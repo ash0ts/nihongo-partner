@@ -16,6 +16,21 @@ cd nihongo-partner
 
 Open **http://localhost:5178**. `./try-it.sh` installs dependencies on first run, validates all curriculum packs (`pnpm validate`), and starts the Vite workbench.
 
+## How to study: the Study Path
+
+The app opens on the **Study Path**, a linear sequence of 34 units generated from the lesson packs. Every unit runs the same loop:
+
+1. **Teach**: one rule card (formula, mental model, traps, examples with audio) or a set of kana/vocab cards.
+2. **Micro-drill**: 6 to 10 prompts with immediate feedback and the explanation shown on every answer.
+3. **Checkpoint**: a fixed-length quiz with no hints, typed answers where possible. The pass bar is 80%.
+4. **Cumulative review**: after a pass, six items from earlier units come back, due and shaky ones first.
+
+Gates are soft. Passing unlocks the next unit. Falling short gives you three choices: retry only what you missed and retake, retake from scratch, or skip ahead. Skipped units stay flagged **Not yet mastered** in the readiness panel until you go back and pass them. You can also jump to any locked unit; everything before it that you have not passed gets the same flag.
+
+There is no timer. Each unit shows a pace estimate (about 4.5 hours for the required path at base pace) and the header recomputes time remaining from how long your passed units actually took. The path covers kana, Lesson 0, Lesson 1, Lesson 2, a 25-item cumulative mock, and an optional ungated Lesson 3 preview at the end.
+
+The other tabs (Kana Lab, Grammar, Numbers, Vocab, Sensei Roleplay, and the original hour-by-hour plan) stay available as free-practice reference. Everything records into the same mastery store, so drilling in a reference tab also feeds the path's review queue.
+
 ## Why Lesson 3 needs a specific cram strategy
 
 Genki I prints romanized readings (`romaji`) under Japanese text in Lessons 1 and 2, then **removes all romaji starting on page 1 of Lesson 3**, switching to kanji with hiragana furigana and katakana loanwords.
@@ -49,12 +64,16 @@ src/content/schema.ts              Zod contracts (LessonPack, GrammarPoint, Voca
 src/content/kana.ts                46 Gojuon kana, voicing rules, orthography mechanics, 10 contrast sets
 src/content/lessons/lesson-00..02  Complete Lesson 0, Lesson 1, and Lesson 2 packs
 src/content/lessons/lesson-03..04  Tonight's Lesson 3 & Lesson 4 bridge packs (ready to expand each week)
+src/content/study-path.ts          STUDY_PATH: the guided path derived from LESSONS + kana data
+src/engine/drills.ts               DrillItem: one quiz shape for kana, vocab, cloze, counter, roleplay items
+src/engine/path.ts                 buildStudyPath, soft gating, checkpoint/review selection, readiness summary
 src/engine/                        Number/time/age/yen oracle, romaji-kana normalizer, FSRS-lite store
+src/ui/PathTab.tsx, UnitPlayer.tsx, Checkpoint.tsx, DrillCard.tsx   The guided flow UI
 docs/                              6-hour cram playbook + curriculum architecture guide
 .cursor/skills/ & .agents/skills/  In-repo agent skills (add-lesson-pack, cram-coach-session, curriculum-audit)
 ```
 
-- Read [`docs/curriculum-architecture.md`](docs/curriculum-architecture.md) to add or expand lessons (`L03`, `L04`, ..., `L12`).
+- Read [`docs/curriculum-architecture.md`](docs/curriculum-architecture.md) to add or expand lessons (`L03`, `L04`, ..., `L12`). A new `status: "complete"` pack automatically gets grammar, vocab, roleplay, and checkpoint units on the Study Path; add a `COUNTER_KINDS_BY_LESSON` entry in `src/engine/path.ts` if it introduces a counter family.
 - Export `progress.json` from the top bar and invoke the `cram-coach-session` skill in Cursor, Claude Code, or Codex to have your coding agent quiz your exact shaky items before class.
 
 ## Verification commands

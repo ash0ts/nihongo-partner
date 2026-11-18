@@ -5,6 +5,7 @@ import {
   KanaEntrySchema,
   LESSONS,
   LessonPackSchema,
+  STUDY_PATH,
   type TextSegment,
 } from "../src/content-exports-for-scripts";
 
@@ -107,6 +108,50 @@ function main(): void {
     }
   }
 
+  // Guided Study Path: every complete lesson must yield teach/drill/checkpoint units.
+  const unitIds = new Set<string>();
+  for (const unit of STUDY_PATH.units) {
+    if (unitIds.has(unit.id)) errors.push(`Duplicate study unit id: ${unit.id}`);
+    unitIds.add(unit.id);
+    if (unit.checkpointPool.length === 0) {
+      errors.push(`Study unit ${unit.id} has an empty checkpoint pool`);
+    }
+    if (unit.checkpointSize <= 0 || unit.checkpointSize > unit.checkpointPool.length) {
+      errors.push(`Study unit ${unit.id}: checkpointSize ${unit.checkpointSize} vs pool ${unit.checkpointPool.length}`);
+    }
+    for (const item of [...unit.drillItems, ...unit.checkpointPool]) {
+      if (item.sourceUnitId !== unit.id) {
+        errors.push(`Study unit ${unit.id}: item ${item.variantKey} has sourceUnitId ${item.sourceUnitId}`);
+      }
+      if (item.answerKind === "choice" && !(item.options ?? []).includes(item.answerDisplay)) {
+        errors.push(`Study unit ${unit.id}: choice item ${item.variantKey} lacks its answer among options`);
+      }
+    }
+  }
+  for (const lesson of LESSONS.filter((l) => l.status === "complete")) {
+    const lessonUnits = STUDY_PATH.units.filter((u) => u.lessonId === lesson.id);
+    if (!lessonUnits.some((u) => u.kind === "grammar")) {
+      errors.push(`Lesson ${lesson.id} produces no grammar study unit`);
+    }
+    if (!lessonUnits.some((u) => u.kind === "vocab")) {
+      errors.push(`Lesson ${lesson.id} produces no vocab study unit`);
+    }
+    if (!lessonUnits.some((u) => u.kind === "checkpoint")) {
+      errors.push(`Lesson ${lesson.id} produces no lesson checkpoint unit`);
+    }
+    const drillIds = new Set(lessonUnits.flatMap((u) => u.drillItems.map((i) => i.id)));
+    for (const c of lesson.clozeDrills) {
+      if (!drillIds.has(c.id)) errors.push(`Lesson ${lesson.id}: cloze ${c.id} is not reachable from any study unit`);
+    }
+    for (const v of lesson.vocab.filter((x) => x.priority !== "bonus")) {
+      if (!drillIds.has(v.id)) errors.push(`Lesson ${lesson.id}: vocab ${v.id} is not reachable from any study unit`);
+    }
+  }
+  const lastUnit = STUDY_PATH.units[STUDY_PATH.units.length - 1];
+  if (STUDY_PATH.units.some((u) => u.kind === "preview") && (!lastUnit || lastUnit.kind !== "preview" || !lastUnit.optional)) {
+    errors.push("Study path preview unit must be last and optional");
+  }
+
   if (errors.length > 0) {
     console.error("Curriculum validation FAILED:");
     for (const e of errors) {
@@ -118,8 +163,12 @@ function main(): void {
   const totalVocab = LESSONS.reduce((acc, l) => acc + l.vocab.length, 0);
   const totalGrammar = LESSONS.reduce((acc, l) => acc + l.grammar.length, 0);
   const totalCloze = LESSONS.reduce((acc, l) => acc + l.clozeDrills.length, 0);
+  const requiredMinutes = STUDY_PATH.units.filter((u) => !u.optional).reduce((acc, u) => acc + u.estimatedMinutes, 0);
   console.log(
     `Curriculum OK: ${GOJUON_KANA.length} gojuon kana, ${CONTRAST_PAIRS.length} contrast pairs, ${LESSONS.length} lessons (${totalGrammar} grammar blocks, ${totalVocab} vocab cards, ${totalCloze} cloze drills).`,
+  );
+  console.log(
+    `Study path OK: ${STUDY_PATH.units.length} units in ${STUDY_PATH.groups.length} groups, ~${requiredMinutes} min required at base pace (+ optional preview).`,
   );
 }
 

@@ -19,6 +19,27 @@ export interface SprintBlockState {
   elapsedSeconds: number;
 }
 
+/**
+ * Per-unit state for the guided Study Path.
+ * - `in-progress`: opened (time logged) but no checkpoint taken yet.
+ * - `passed`: a checkpoint met the unit's pass bar.
+ * - `failed`: attempted, below the bar; unit stays available for retry.
+ * - `skipped`: learner moved past it without passing (shown as "not yet mastered").
+ */
+export type UnitStatus = "in-progress" | "passed" | "failed" | "skipped";
+
+export interface UnitProgress {
+  unitId: string;
+  status: UnitStatus;
+  attempts: number;
+  bestScore: number; // 0..1
+  lastScore: number; // 0..1
+  lastCheckpointAt?: string;
+  skippedAt?: string;
+  /** Wall-clock seconds spent inside the unit player, used for pace estimates. */
+  elapsedSeconds: number;
+}
+
 export interface ProgressSnapshot {
   version: "nihongo-partner.v1";
   updatedAt: string;
@@ -26,6 +47,7 @@ export interface ProgressSnapshot {
   slowAudio: boolean;
   sprintBlocks: Record<string, SprintBlockState>;
   items: Record<string, ItemMastery>;
+  pathUnits: Record<string, UnitProgress>;
 }
 
 const STORAGE_KEY = "nihongo-partner.progress.v1";
@@ -40,6 +62,7 @@ export function createEmptySnapshot(): ProgressSnapshot {
     slowAudio: false,
     sprintBlocks: {},
     items: {},
+    pathUnits: {},
   };
 }
 
@@ -59,6 +82,7 @@ export function loadProgress(): ProgressSnapshot {
       ...parsed,
       items: parsed.items ?? {},
       sprintBlocks: parsed.sprintBlocks ?? {},
+      pathUnits: parsed.pathUnits ?? {},
     };
   } catch {
     return createEmptySnapshot();
@@ -142,4 +166,98 @@ export function getWeakItemIds(
     .filter((item) => (!category || item.category === category) && classifyMastery(item) === "shaky")
     .sort((a, b) => b.lapses - a.lapses || a.streak - b.streak)
     .map((item) => item.id);
+}
+
+/* ---------------------------------------------------------------------------------------- */
+/* Study Path unit progress                                                                   */
+/* ---------------------------------------------------------------------------------------- */
+
+function emptyUnitProgress(unitId: string): UnitProgress {
+  return {
+    unitId,
+    status: "in-progress",
+    attempts: 0,
+    bestScore: 0,
+    lastScore: 0,
+    elapsedSeconds: 0,
+  };
+}
+
+/**
+ * Records a checkpoint result. `score` is 0..1; `passBar` is the unit's soft gate.
+ * A pass marks the unit `passed`; a miss marks it `failed` (still available) unless it
+ * had already been passed before, in which case the earlier pass stands.
+ */
+export function recordCheckpoint(
+  snapshot: ProgressSnapshot,
+  unitId: string,
+  score: number,
+  passBar: number,
+  now = new Date(),
+): ProgressSnapshot {
+  const prev = snapshot.pathUnits[unitId] ?? emptyUnitProgress(unitId);
+  const clamped = Math.max(0, Math.min(1, score));
+  const passedNow = clamped >= passBar;
+  const status: UnitStatus = passedNow || prev.status === "passed" ? "passed" : "failed";
+  return {
+    ...snapshot,
+    updatedAt: now.toISOString(),
+    pathUnits: {
+      ...snapshot.pathUnits,
+      [unitId]: {
+        ...prev,
+        status,
+        attempts: prev.attempts + 1,
+        bestScore: Math.max(prev.bestScore, clamped),
+        lastScore: clamped,
+        lastCheckpointAt: now.toISOString(),
+        skippedAt: status === "passed" ? undefined : prev.skippedAt,
+      },
+    },
+  };
+}
+
+/** Marks a unit as skipped ("not yet mastered"). Never downgrades a passed unit. */
+export function markUnitSkipped(
+  snapshot: ProgressSnapshot,
+  unitId: string,
+  now = new Date(),
+): ProgressSnapshot {
+  const prev = snapshot.pathUnits[unitId] ?? emptyUnitProgress(unitId);
+  if (prev.status === "passed") return snapshot;
+  return {
+    ...snapshot,
+    updatedAt: now.toISOString(),
+    pathUnits: {
+      ...snapshot.pathUnits,
+      [unitId]: { ...prev, status: "skipped", skippedAt: now.toISOString() },
+    },
+  };
+}
+
+/** Adds wall-clock seconds spent in a unit (feeds the pace estimate). */
+export function addUnitElapsed(
+  snapshot: ProgressSnapshot,
+  unitId: string,
+  seconds: number,
+  now = new Date(),
+): ProgressSnapshot {
+  if (!Number.isFinite(seconds) || seconds <= 0) return snapshot;
+  const prev = snapshot.pathUnits[unitId] ?? emptyUnitProgress(unitId);
+  return {
+    ...snapshot,
+    updatedAt: now.toISOString(),
+    pathUnits: {
+      ...snapshot.pathUnits,
+      [unitId]: { ...prev, elapsedSeconds: prev.elapsedSeconds + Math.round(seconds) },
+    },
+  };
+}
+
+/** Clears a unit's record so it can be retaken from scratch (mastery items are kept). */
+export function resetUnit(snapshot: ProgressSnapshot, unitId: string, now = new Date()): ProgressSnapshot {
+  if (!snapshot.pathUnits[unitId]) return snapshot;
+  const next = { ...snapshot.pathUnits };
+  delete next[unitId];
+  return { ...snapshot, updatedAt: now.toISOString(), pathUnits: next };
 }

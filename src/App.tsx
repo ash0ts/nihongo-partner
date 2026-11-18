@@ -1,22 +1,30 @@
 import { useRef, useState } from "react";
 import type { DisplayMode } from "./content/schema";
 import type { AppTab } from "./content/sprint";
+import { STUDY_PATH } from "./content/study-path";
+import { jumpToUnit } from "./engine/path";
 import {
+  addUnitElapsed,
   type ItemMastery,
   loadProgress,
+  markUnitSkipped,
   type ProgressSnapshot,
+  recordCheckpoint,
   recordReview,
+  resetUnit,
   saveProgress,
 } from "./engine/srs";
 import { GrammarTab } from "./ui/GrammarTab";
 import { KanaLabTab } from "./ui/KanaLabTab";
 import { NumbersTab } from "./ui/NumbersTab";
+import { PathTab } from "./ui/PathTab";
 import { SenseiTab } from "./ui/SenseiTab";
 import { SprintTab } from "./ui/SprintTab";
 import { VocabTab } from "./ui/VocabTab";
 
 const NAV_TABS: Array<{ id: AppTab; label: string }> = [
-  { id: "sprint", label: "6-Hr Cram Plan" },
+  { id: "path", label: "Study Path" },
+  { id: "sprint", label: "Reference: 6-Hr Plan" },
   { id: "kana", label: "Kana Lab" },
   { id: "grammar", label: "Grammar & こそあど" },
   { id: "numbers", label: "Numbers, Time & Yen" },
@@ -25,8 +33,9 @@ const NAV_TABS: Array<{ id: AppTab; label: string }> = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<AppTab>("sprint");
+  const [activeTab, setActiveTab] = useState<AppTab>("path");
   const [progress, setProgress] = useState<ProgressSnapshot>(() => loadProgress());
+  const [senseiScenarioId, setSenseiScenarioId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateProgress = (updater: (prev: ProgressSnapshot) => ProgressSnapshot) => {
@@ -44,6 +53,31 @@ export default function App() {
     ms: number,
   ) => {
     updateProgress((prev) => recordReview(prev, id, category, isCorrect, ms));
+  };
+
+  const handleRecordCheckpoint = (unitId: string, score: number, passBar: number) => {
+    updateProgress((prev) => recordCheckpoint(prev, unitId, score, passBar));
+  };
+
+  const handleSkipUnit = (unitId: string) => {
+    updateProgress((prev) => markUnitSkipped(prev, unitId));
+  };
+
+  const handleJumpToUnit = (unitId: string) => {
+    updateProgress((prev) => jumpToUnit(STUDY_PATH, prev, unitId));
+  };
+
+  const handleResetUnit = (unitId: string) => {
+    updateProgress((prev) => resetUnit(prev, unitId));
+  };
+
+  const handleUnitElapsed = (unitId: string, seconds: number) => {
+    updateProgress((prev) => addUnitElapsed(prev, unitId, seconds));
+  };
+
+  const handleOpenRoleplay = (scenarioId: string) => {
+    setSenseiScenarioId(scenarioId);
+    setActiveTab("sensei");
   };
 
   const handleSwitchMode = (displayMode: DisplayMode) => {
@@ -96,8 +130,13 @@ export default function App() {
       try {
         const parsed = JSON.parse(String(reader.result)) as ProgressSnapshot;
         if (parsed.version === "nihongo-partner.v1" && parsed.items) {
-          saveProgress(parsed);
-          setProgress(parsed);
+          const normalized: ProgressSnapshot = {
+            ...parsed,
+            sprintBlocks: parsed.sprintBlocks ?? {},
+            pathUnits: parsed.pathUnits ?? {},
+          };
+          saveProgress(normalized);
+          setProgress(normalized);
         }
       } catch {
         // Ignore malformed uploads
@@ -205,6 +244,21 @@ export default function App() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 py-6">
+        {activeTab === "path" && (
+          <PathTab
+            path={STUDY_PATH}
+            progress={progress}
+            mode={progress.displayMode}
+            slowAudio={progress.slowAudio}
+            onRecordReview={handleRecordReview}
+            onRecordCheckpoint={handleRecordCheckpoint}
+            onSkipUnit={handleSkipUnit}
+            onJumpToUnit={handleJumpToUnit}
+            onResetUnit={handleResetUnit}
+            onElapsed={handleUnitElapsed}
+            onOpenRoleplay={handleOpenRoleplay}
+          />
+        )}
         {activeTab === "sprint" && (
           <SprintTab
             progress={progress}
@@ -246,7 +300,12 @@ export default function App() {
           />
         )}
         {activeTab === "sensei" && (
-          <SenseiTab mode={progress.displayMode} slowAudio={progress.slowAudio} />
+          <SenseiTab
+            key={senseiScenarioId ?? "default"}
+            mode={progress.displayMode}
+            slowAudio={progress.slowAudio}
+            initialScenarioId={senseiScenarioId}
+          />
         )}
       </main>
     </div>
