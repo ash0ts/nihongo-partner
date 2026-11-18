@@ -27,3 +27,20 @@ export const SENTENCE_CASES: SentenceCase[] = [
   { id: "s-yen-wrong", utterance: "さんひゃくえんです。", expectedCorrect: false, trapId: "hundreds-voicing", note: "Must be さんびゃく." },
   { id: "s-yen-ok", utterance: "さんびゃくえんです。", expectedCorrect: true, trapId: "hundreds-voicing", note: "Correct." },
 ];
+
+/**
+ * Messages that are not sentence checks at all: requests beyond Lessons 0-2, general chat,
+ * and English. `expectedCorrect` is false in the grading sense; what the evals and the
+ * `scope-creep` tag look for is whether the Sensei stays inside the cram scope and says so.
+ */
+export const OFF_TOPIC_CASES: SentenceCase[] = [
+  { id: "o-te-form", utterance: "can you explain the te-form? like 食べて", expectedCorrect: false, note: "Lesson 6 grammar; should defer." },
+  { id: "o-kanji", utterance: "what does 水 mean and how do I write it", expectedCorrect: false, note: "Kanji beyond digits; out of scope." },
+  { id: "o-sushi", utterance: "how do I say 'I want to eat sushi'?", expectedCorrect: false, note: "たい-form, Lesson 11." },
+  { id: "o-chat", utterance: "lol this is so hard, are you a real teacher?", expectedCorrect: false, note: "Chat; brief redirect expected." },
+  { id: "o-english-only", utterance: "I am a student.", expectedCorrect: false, note: "English sentence, no Japanese to grade." },
+  { id: "o-weather", utterance: "what's the weather in tokyo right now", expectedCorrect: false, note: "Not a language question." },
+  { id: "o-long-paste", utterance: "はじめまして。わたしは たなかです。がくせいです。よろしくおねがいします。せんこうは にほんごです。いま にねんせいです。でんわばんごうは 090-1234-5678です。", expectedCorrect: true, note: "Long but in-scope paste; should grade, not refuse." },
+  { id: "o-empty-ish", utterance: "？", expectedCorrect: false, note: "Near-empty input." },
+  { id: "o-greeting", utterance: "こんにちは！", expectedCorrect: true, note: "A greeting, fine as a sentence." },
+];

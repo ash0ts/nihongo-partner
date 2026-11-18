@@ -15,6 +15,7 @@ and logs a `wandb.EvalTable`.
 from __future__ import annotations
 
 import argparse
+import re
 import json
 from pathlib import Path
 from collections import defaultdict
@@ -27,7 +28,7 @@ Answer JSON ONLY: {"names_trap": bool, "mode_ok": bool, "reading_ok": bool, "in_
 - names_trap: the reply identifies the specific confusion the learner made (not just restating the answer).
 - mode_ok: if mode is classroom or immersion, the reply spells Japanese in kana, never romaji. In bridge mode this is always true.
 - reading_ok: every Japanese reading or fact stated is correct (yoji, shichiji, kuji, hatachi, sanbyaku, roppyaku, happyaku, topic particle written は).
-- in_scope: nothing beyond Lessons 0-2. All kana are in scope (hiragana, katakana, dakuten, small っ, long vowels, loanwords); out of scope means verbs, adjectives, particles besides は/か/の/も/ね/よ, or kanji beyond digits.
+- in_scope: nothing beyond Genki I Lessons 0-2. IN scope: all kana (hiragana, katakana, dakuten, small っ, long vowels, loanwords); numbers, time, minutes, age (はたち), school year (よねんせい), prices/yen; X は Y です, 〜ですか, N1 の N2, も, じゃないです, ね/よ, これ/それ/あれ/どれ and この/その/あの/どの, ここ/そこ/あそこ/どこ, だれ/だれの, 〜をください and 〜をおねがいします as fixed shopping phrases, all Lesson 0 greetings and classroom expressions as fixed phrases (おはよう, いってきます, いってらっしゃい, ただいま, おかえり, おやすみなさい, すみません, もういちどいってください, ゆっくりいってください, わかりましたか), the particle を only inside fixed phrases like 〜をください, telephone numbers, and Lesson 1-2 vocabulary (people, majors, food, things, places). OUT of scope: verb conjugation, て-form, たい-form, adjectives taught as grammar, particles が/に/で/へ as grammar points, keigo, and any kanji other than digits.
 Keep note under 20 words."""
 
 
@@ -55,6 +56,7 @@ def deterministic_scores(row: dict, traps: dict[str, dict]) -> dict:
     return {
         "text": text,
         "words": word_count(text),
+        "kanji_free": not re.search(r"[\u4e00-\u9fff]", text),
         "under_40_words": word_count(text) <= 40 if row["task"] == "explain_miss" else word_count(text) <= 60,
         "english": looks_english(text),
         "romaji_leak": False if kana_reading_item else romaji_leak(text, row["mode"], f"{row.get('expected') or ''} {row.get('input') or ''}"),
@@ -111,6 +113,7 @@ def run(args: argparse.Namespace) -> int:
                 "expected": o.get("expected"),
                 "reply": det["text"],
                 "words": det["words"],
+                "kanji_free": det["kanji_free"],
                 "under_40_words": det["under_40_words"],
                 "english": det["english"],
                 "mode_ok_det": not det["romaji_leak"],
@@ -137,7 +140,7 @@ def run(args: argparse.Namespace) -> int:
 
     entity, project = args.project.split("/")
     run = wandb.init(entity=entity, project=project, job_type="eval-feedback", config={"judge_model": JUDGE_MODEL, "dataset": args.dataset, "rows": len(rows)})
-    score_cols = [c for c in ("under_40_words", "english", "mode_ok_det", "names_trap_det", "names_trap_judge", "mode_ok_judge", "reading_ok", "in_scope") if c in rows[0]]
+    score_cols = [c for c in ("kanji_free", "under_40_words", "english", "mode_ok_det", "names_trap_det", "names_trap_judge", "mode_ok_judge", "reading_ok", "in_scope") if c in rows[0]]
     table = wandb.EvalTable(
         columns=list(rows[0].keys()),
         data=[list(r.values()) for r in rows],
@@ -158,7 +161,7 @@ def summarize(rows: list[dict], judged: bool) -> dict:
         scored = [r for r in subset if r.get(key) is not None]
         return round(sum(1 for r in scored if r[key]) / len(scored), 3) if scored else None
 
-    keys = ["under_40_words", "english", "mode_ok_det", "names_trap_det"] + (["names_trap_judge", "mode_ok_judge", "reading_ok", "in_scope"] if judged else [])
+    keys = ["kanji_free", "under_40_words", "english", "mode_ok_det", "names_trap_det"] + (["names_trap_judge", "mode_ok_judge", "reading_ok", "in_scope"] if judged else [])
     out: dict = {k: rate(k, rows) for k in keys}
     by_mode: dict[str, list[dict]] = defaultdict(list)
     by_persona: dict[str, list[dict]] = defaultdict(list)

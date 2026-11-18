@@ -24,6 +24,10 @@ export interface LearnerContext {
   recentEvents?: InteractionEvent[];
   /** Synthetic persona id, set only by the simulator. */
   persona?: string;
+  /** Stable anonymous learner id (one person across sessions). The simulator sets it; the app sends its random install id. */
+  learnerId?: string;
+  /** Batch label for simulated traffic (e.g. "pop-21-2026-11-18"), so one run can be filtered out or compared. */
+  cohort?: string;
 }
 
 export interface ExplainMissRequest extends LearnerContext {

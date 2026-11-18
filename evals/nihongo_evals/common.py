@@ -23,7 +23,7 @@ EVALS_DIR = Path(__file__).resolve().parent.parent
 REPO_DIR = EVALS_DIR.parent
 DATASETS_DIR = EVALS_DIR / "datasets"
 
-DEFAULT_PROJECT = os.environ.get("FORGE_PROJECT", "wandb/nihongo-partner")
+DEFAULT_PROJECT = os.environ.get("FORGE_PROJECT", "wandb/nihongo-sensei")
 DEFAULT_MODEL = os.environ.get("FORGE_MODEL", "zai-org/GLM-5.3-Flash")
 # A different family from the agent model, and one that honours thinking=disabled with JSON output.
 JUDGE_MODEL = os.environ.get("FORGE_JUDGE_MODEL", "Qwen/Qwen3.8-27B")

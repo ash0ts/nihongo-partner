@@ -42,7 +42,7 @@ export interface TraceRunner {
 }
 
 export const AGENT_NAME = "nihongo-sensei";
-export const AGENT_VERSION = "sensei-v2";
+export const AGENT_VERSION = "sensei-v4";
 
 function clean(attrs: Record<string, AttrValue | undefined> | undefined): Record<string, AttrValue> {
   const out: Record<string, AttrValue> = {};

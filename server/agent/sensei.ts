@@ -65,9 +65,9 @@ export function summarizeLearner(ctx: LearnerContext): LearnerState {
 }
 
 const MODE_RULE: Record<string, string> = {
-  bridge: "The learner is in Romaji Bridge mode: you MAY include romaji in parentheses after kana.",
-  classroom: "The learner is in Classroom mode (Genki Lesson 3 format): write Japanese in kana only. NO romaji anywhere.",
-  immersion: "The learner is in Immersion mode: write Japanese in kana only. NO romaji anywhere.",
+  bridge: "The learner is in Romaji Bridge mode: you MAY include romaji in parentheses after kana. Write Japanese in kana, never kanji (digits are fine).",
+  classroom: "The learner is in Classroom mode (Genki Lesson 3 format): write Japanese in kana only. NO romaji anywhere, no kanji (digits are fine).",
+  immersion: "The learner is in Immersion mode: write Japanese in kana only. NO romaji anywhere, no kanji (digits are fine).",
 };
 
 /**
@@ -76,7 +76,15 @@ const MODE_RULE: Record<string, string> = {
  * (the expected answer and the learner's input). English words fail the conversion or
  * produce kana that is not present, so prose is not penalised.
  */
+/** Inputs that mean "I give up" rather than a wrong attempt. */
+const GAVE_UP = /^(|\?|？|わかりません|わからない|わかんない|idk|i don'?t know|dunno|pass|skip|help)$/i;
+
 const META_WORDS = new Set(["kana", "hiragana", "katakana", "kanji", "romaji", "genki", "sensei", "dakuten", "handakuten", "sokuon", "furigana", "yoon"]);
+
+/** Lessons 0-2 learners read kana only; any CJK ideograph in a reply is a leak (digits and kana are fine). */
+export function kanjiFree(text: string): boolean {
+  return !/[\u4e00-\u9fff\u3400-\u4dbf]/.test(text);
+}
 
 export function romajiFree(text: string, kanaContext = ""): boolean {
   const kanaPresent = katakanaToHiragana(`${text} ${kanaContext}`);
@@ -104,6 +112,8 @@ export function createSensei(opts: SenseiOptions) {
       "nihongo.mode": ctx.mode,
       "nihongo.unit_id": ctx.unitId,
       "nihongo.persona": ctx.persona,
+      "nihongo.learner_id": ctx.learnerId,
+      "nihongo.cohort": ctx.cohort,
       "nihongo.agent_version": AGENT_VERSION,
       "nihongo.prompt_variant": variant,
       ...extra,
@@ -190,12 +200,15 @@ export function createSensei(opts: SenseiOptions) {
   async function explainMiss(req: ExplainMissRequest): Promise<{ result: ExplainMissResult; conversationId: string }> {
     const item = itemIndex.get(req.itemId);
     const trap = item ? trapForItem(item) : undefined;
+    const promptForMessage = item?.prompt.text ?? item?.prompt.segments?.map((s) => s.text).join("") ?? req.promptText ?? req.itemId;
+    const gaveUp = GAVE_UP.test(req.input.trim());
+    const wrote = req.input.trim().length > 0 ? `"${req.input}"` : "nothing";
     return opts.tracer.run(
       {
         conversationId: req.sessionId,
-        userMessage: `Why was "${req.input}" wrong for ${req.itemId}?`,
+        userMessage: `I answered ${wrote} for "${promptForMessage}" and it was marked wrong. Why?`,
         model,
-        attributes: baseAttrs(req, "explain_miss", { "nihongo.item_id": req.itemId, "nihongo.trap_id": trap?.id }),
+        attributes: baseAttrs(req, "explain_miss", { "nihongo.item_id": req.itemId, "nihongo.trap_id": trap?.id, "nihongo.gave_up": gaveUp }),
       },
       async (trace) => {
         const state = await tools.getLearnerState(trace, req);
@@ -206,9 +219,11 @@ export function createSensei(opts: SenseiOptions) {
         const rule = await tools.lookupRule(trace, trap?.id);
 
         const deterministic: ExplainMissResult = {
-          explanation: trap
-            ? `You wrote ${req.input}; the answer is ${expected}. ${trap.rule}`
-            : `You wrote ${req.input}; the answer is ${expected}. ${looked?.explanation ?? ""}`.trim(),
+          explanation: gaveUp
+            ? `No answer this time. It is ${expected}. ${looked?.explanation ?? trap?.rule ?? ""} Try saying it aloud before the next one.`.trim()
+            : trap
+              ? `You wrote ${req.input}; the answer is ${expected}. ${trap.rule}`
+              : `You wrote ${req.input}; the answer is ${expected}. ${looked?.explanation ?? ""}`.trim(),
           trapId: trap?.id,
           trapLabel: trap?.label,
           rule: trap?.rule,
@@ -219,6 +234,7 @@ export function createSensei(opts: SenseiOptions) {
           "You are a concise Japanese Sensei helping a student cram Genki I Lessons 0-2. The student just answered a drill item wrong.",
           "Explain the specific confusion in under 40 words of plain ENGLISH: contrast what they wrote with the correct answer and say why. No praise, no filler.",
           "Ground every fact in `itemExplanation` and `knownTrap`: reuse their mnemonic or rule in your own words. Never describe kana stroke shapes or give readings that are not in those fields.",
+          "If `learnerGaveUp` is true the student typed nothing, '?', or わかりません: do not contrast or scold. Give the answer with its mnemonic in one sentence, then one concrete thing to try on the next item.",
           MODE_RULE[req.mode] ?? MODE_RULE.classroom,
           ...facts,
           'Return JSON ONLY: {"explanation": string}.',
@@ -227,6 +243,7 @@ export function createSensei(opts: SenseiOptions) {
           prompt: promptText,
           promptInstruction: looked?.promptEn ?? "",
           learnerWrote: req.input,
+          learnerGaveUp: gaveUp,
           correctAnswer: expected,
           itemExplanation: looked?.explanation ?? "",
           itemWarning: looked?.trapWarning ?? null,
@@ -237,7 +254,7 @@ export function createSensei(opts: SenseiOptions) {
         const text = typeof llm?.parsed.explanation === "string" ? llm.parsed.explanation.trim() : "";
         // Kana-reading items are graded in romaji, so saying `む is "mu"` is the lesson, not a leak.
         const romajiIsTheAnswer = item?.skill === "kana-read";
-        const useLlm = text.length > 0 && (req.mode === "bridge" || romajiIsTheAnswer || romajiFree(text, `${expected} ${req.input}`));
+        const useLlm = text.length > 0 && kanjiFree(text) && (req.mode === "bridge" || romajiIsTheAnswer || romajiFree(text, `${expected} ${req.input}`));
         const result: ExplainMissResult = useLlm ? { ...deterministic, explanation: text, source: "llm" } : deterministic;
         trace.setAttributes({
           "nihongo.source": result.source,
@@ -263,23 +280,25 @@ export function createSensei(opts: SenseiOptions) {
         const system = [
           "You are a concise, accurate Japanese Sensei grading a student cramming Genki I Lessons 0-2 before starting Lesson 3.",
           "Stay strictly inside beginner polite Japanese (desu / janai desu, wa/ka/no/mo/ne/yo, ko-so-a-do, numbers/time/age/yen).",
+          "If the message is not a Japanese sentence to check (English chat, a question about grammar or kanji the student has not reached such as te-form, tai-form, verbs, adjectives, particles ga/ni/de/o, or anything unrelated to Japanese), set inScope to false, do NOT teach it, and in `feedback` say in one sentence that it is beyond Lessons 0-2 and offer to check a sentence using the unlocked patterns instead. Leave `japanese` and `reading` empty in that case.",
           ...facts,
           `Unlocked grammar patterns: ${req.allowedGrammar.join("; ")}`,
           MODE_RULE[req.mode] ?? MODE_RULE.bridge,
-          'Return JSON ONLY with keys: {"correct": boolean, "japanese": string, "reading": string, "feedback": string, "trapNote": string}.',
+          'Return JSON ONLY with keys: {"inScope": boolean, "correct": boolean, "japanese": string, "reading": string, "feedback": string, "trapNote": string}.',
           "Write `feedback` and `trapNote` in clear, direct ENGLISH (under 40 words each). In `japanese`, give the natural polite Japanese sentence, and in `reading` give its pure hiragana/katakana reading.",
         ];
-        const llm = await callModel<Partial<GradeResult>>(trace, system, req.userMessage, req.history ?? []);
+        const llm = await callModel<Partial<GradeResult> & { inScope?: boolean }>(trace, system, req.userMessage, req.history ?? []);
         if (!llm) throw new Error("Live Sensei is not configured.");
         const p = llm.parsed;
+        const inScope = p.inScope !== false;
         const result: GradeResult = {
-          correct: Boolean(p.correct),
-          japanese: String(p.japanese ?? ""),
-          reading: String(p.reading ?? ""),
+          correct: inScope && Boolean(p.correct),
+          japanese: inScope ? String(p.japanese ?? "") : "",
+          reading: inScope ? String(p.reading ?? "") : "",
           feedback: String(p.feedback ?? ""),
-          trapNote: String(p.trapNote ?? ""),
+          trapNote: inScope ? String(p.trapNote ?? "") : "",
         };
-        trace.setAttributes({ "nihongo.graded_correct": result.correct });
+        trace.setAttributes({ "nihongo.graded_correct": result.correct, "nihongo.in_scope": inScope });
         trace.output(result.feedback || result.japanese);
         return { result, conversationId: trace.conversationId };
       },
@@ -325,7 +344,7 @@ export function createSensei(opts: SenseiOptions) {
     return opts.tracer.run(
       {
         conversationId: req.sessionId,
-        userMessage: `What should I fix after ${req.unitTitle}? Missed ${req.missed.length}.`,
+        userMessage: `I finished "${req.unitTitle}" and missed ${req.missed.length} ${req.missed.length === 1 ? "item" : "items"}. What should I fix?`,
         model,
         attributes: baseAttrs(req, "what_to_fix", { "nihongo.missed": req.missed.length }),
       },
@@ -359,7 +378,7 @@ export function createSensei(opts: SenseiOptions) {
         const user = JSON.stringify({ unit: req.unitTitle, missed: missedWithRules, knownTraps: labels, learnerState: state });
         const llm = await callModel<{ summary?: string }>(trace, system, user);
         const text = typeof llm?.parsed.summary === "string" ? llm.parsed.summary.trim() : "";
-        const result: WhatToFixResult = text ? { ...deterministic, summary: text, source: "llm" } : deterministic;
+        const result: WhatToFixResult = text && kanjiFree(text) ? { ...deterministic, summary: text, source: "llm" } : deterministic;
         trace.setAttributes({ "nihongo.source": result.source });
         trace.output(result.summary);
         return { result, conversationId: trace.conversationId };
@@ -371,7 +390,7 @@ export function createSensei(opts: SenseiOptions) {
     return opts.tracer.run(
       {
         conversationId: req.sessionId,
-        userMessage: `Compose a ${req.n ?? 10}-item set from my last ${req.recentEvents?.length ?? 0} answers.`,
+        userMessage: `Build me a ${req.n ?? 10}-item set from my recent answers.`,
         model,
         attributes: baseAttrs(req, "compose_set", { "nihongo.events": req.recentEvents?.length ?? 0 }),
       },

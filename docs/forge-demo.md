@@ -17,22 +17,24 @@ Without a key the same buttons still work from deterministic rules; with a key t
 ## 2. Make traffic worth looking at (1 min)
 
 ```sh
-pnpm demo
+pnpm demo            # 12 learners sampled by persona weight, about 150 turns
+pnpm demo --one      # one rushed learner through two units, about 30 turns
 ```
 
-This runs one rushed learner through two units against the live agent (about 30 turns in three conversations), then prints the conversation ids, the Agent Lens link, the agent versions, and the current tag counts.
+The population is skewed like a real class: a few near-perfect learners who barely call the Sensei, a steady middle, and edge cases (a learner who types わかりません after two misses, one who types romaji in a kana-only mode, one who pastes noise, one who asks for te-form). The script prints the busiest conversation ids, the Agent Lens link, the agent versions, and the current tag counts. The project already holds two larger cohorts (`pop-a`, 1731 turns; `pop-b`, 695 turns) described in `agentlens/tags.md`; filter on `nihongo.cohort` to see one at a time.
 
 ## 3. Read one conversation in Agent Lens (3 min)
 
-Open the printed link (`https://forge.coreweave.com/agent-lens/wandb/nihongo-partner`) and paste one of the conversation ids into search. Points to make:
+Open the printed link (`https://forge.coreweave.com/agent-lens/wandb/nihongo-sensei`) and paste one of the conversation ids into search. Points to make:
 
 - A conversation is one learner session. Each turn is a `chat` span with the tool spans under it: `get_learner_state`, `lookup_item`, `grade_answer`, `lookup_rule`, `compose_exercise_set`.
 - Every span carries `nihongo.*` attributes (task, trap id, mode, unit, whether the reply came from the model or the deterministic fallback). Filter on `nihongo.task = explain_miss` and `nihongo.source = deterministic` to show how often the guardrails took over.
-- Agent versions: `sensei-v1` explained kana shapes from memory and was sometimes wrong; `sensei-v2` is given the item's mnemonic and told not to invent shapes. Compare the two in the versions view.
+- Agent versions: every prompt change is a new version. `sensei-v3` leaked kanji into 1.1% of replies; `sensei-v4` added a kana-only rule and a guard that falls back to the rule-based text, and the `kanji-leak` tag went to zero on the next cohort. Compare the two in the versions view. (The earlier `wandb/nihongo-partner` project holds the `v1` to `v2` story: shapes described from memory, then grounded in each item's mnemonic.)
+- Learners, not just sessions: `nihongo.learner_id` groups one person's units, so a learner who failed kana-contrasts and then L01-counters reads as one story. `nihongo.gave_up = true` finds the turns where someone typed わかりません.
 
 ## 4. Tags: the judge reading every conversation (2 min)
 
-Open the tag view the script prints (or `agentlens/tags.md`). Five tags, each with plain-English criteria the LLM judge applies to new conversations within a few minutes:
+Open the tag view the script prints (or `agentlens/tags.md`). Six tags, each with plain-English criteria the LLM judge applies to new conversations within a few minutes:
 
 | tag | what it catches |
 | --- | --- |
@@ -40,20 +42,21 @@ Open the tag view the script prints (or `agentlens/tags.md`). Five tags, each wi
 | `romaji-leak` | romaji in a mode that should be kana-only |
 | `scope-creep` | grammar beyond Lessons 0-2 |
 | `wrong-reading` | a kana shape or reading stated wrongly |
-| `learner-stuck` | three misses in a row with no change in the Sensei's approach |
+| `learner-stuck` | repeated misses, a failed retry, or a learner who has stopped trying |
+| `kanji-leak` | kanji in the Sensei's own text, unreadable before Lesson 3 |
 
-Click a tagged conversation to show the turn that triggered it. The `wrong-reading` tag is what pointed at the v1 problem fixed in v2.
+Click a tagged conversation to show the turn that triggered it. `kanji-leak` is the tag with the cleanest story: found by the offline eval on the first cohort, promoted to a tag, fixed in the next version, and now a regression alarm.
 
 ## 5. Evals: the same replies scored offline (2 min)
 
 ```sh
 cd evals
-uv run nihongo-evals feedback --dataset ../out/sim/demo-<seed>/agent-outputs.jsonl
+uv run nihongo-evals feedback --dataset ../out/sim/demo-<seed>/agent-outputs.jsonl --limit 200
 uv run nihongo-evals grading
 uv run nihongo-evals composer
 ```
 
-Each writes a `wandb.EvalTable` to `https://forge.coreweave.com/wandb/wandb/nihongo-partner`. Open the run and show the table: input, reply, deterministic checks, judge verdict, judge note. `grading` compares three graders (rules only, model, model plus phonetic facts) on the frozen 143-case set; `composer` checks the exercise sets against the teaching rules in `docs/teaching-rationale.md`.
+Each writes a `wandb.EvalTable` to `https://forge.coreweave.com/wandb/wandb/nihongo-sensei`. Open the run and show the table: input, reply, deterministic checks, judge verdict, judge note. `grading` compares three graders (rules only, model, model plus phonetic facts) on the frozen 143-case set; `composer` checks the exercise sets against the teaching rules in `docs/teaching-rationale.md`.
 
 The committed datasets under `evals/datasets/` are synthetic and are also published as Weave datasets, so the tables are reproducible.
 

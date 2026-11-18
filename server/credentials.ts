@@ -15,7 +15,7 @@ export interface TutorCredentials {
 }
 
 export const DEFAULT_FORGE_MODEL = "zai-org/GLM-5.3-Flash";
-export const DEFAULT_FORGE_PROJECT = "wandb/nihongo-partner";
+export const DEFAULT_FORGE_PROJECT = "wandb/nihongo-sensei";
 
 export function readWandbNetrcKey(): string | undefined {
   try {

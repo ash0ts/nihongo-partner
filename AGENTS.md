@@ -17,7 +17,7 @@
 - Run Vitest unit tests (counters, romaji-kana conversion, SRS + unit progress, drill builders, path generation/gating, curriculum packs): `pnpm test`
 - Check repository for leaked secrets or hardcoded local user paths: `pnpm scrub`
 - Sensei agent standalone (port 5179, prints the phone token): `pnpm sensei`
-- Persona simulator: `pnpm sim --no-llm` (offline) or `pnpm sim --seed 7` (traced to Agent Lens); freeze a run with `pnpm sim:freeze <run-dir> evals/datasets sim-v1`
+- Persona simulator: `pnpm sim --no-llm` (offline), `pnpm sim --seed 7` (persona x unit grid, traced), `pnpm sim --population 120 --seed 21 --cohort pop-a` (weighted population with multi-unit journeys; the cohort lands as `nihongo.cohort`); freeze a run with `pnpm sim:freeze <run-dir> evals/datasets sim-v1`. Default Forge project is `wandb/nihongo-sensei` (`FORGE_PROJECT` overrides); `wandb/nihongo-partner` is the earlier development project.
 - Regenerate eval case files from the curriculum and frozen events: `pnpm export:eval-cases`, `pnpm export:composer-cases`
 - Sync Agent Lens tags from `agentlens/tags.json`: `pnpm tags` (`--check` for CI-style drift detection)
 - Forge walkthrough: `pnpm demo` (traced sim + printed links/ids/tag counts); the script is `docs/forge-demo.md`. Bump `AGENT_VERSION` in `server/tracing.ts` whenever a prompt changes so Agent Lens can compare versions.

@@ -78,6 +78,8 @@ function learnerContext(body: Record<string, unknown>) {
     unitId: body.unitId ? str(body.unitId, 80) : undefined,
     recentEvents: events as never,
     persona: body.persona ? str(body.persona, 40) : undefined,
+    learnerId: body.learnerId ? str(body.learnerId, 40) : undefined,
+    cohort: body.cohort ? str(body.cohort, 40) : undefined,
   };
 }
 

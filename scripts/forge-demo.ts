@@ -1,7 +1,8 @@
 /**
  * `pnpm demo`: the five-minute Forge walkthrough, driven from one terminal.
  *
- * 1. Runs one rushed learner through two units with the live Sensei agent (traced).
+ * 1. Runs a small population (12 learners sampled by persona weight, `--population N` to change,
+ *    or `--one` for a single rushed learner through two units) against the live Sensei agent (traced).
  * 2. Prints the Agent Lens links to open, the conversation ids to search for, and the
  *    current tag counts and agent versions pulled from the API.
  * 3. Prints the eval commands that score the same conversations offline.
@@ -20,13 +21,18 @@ if (!key) {
   process.exit(2);
 }
 
-const seed = process.argv.includes("--seed") ? process.argv[process.argv.indexOf("--seed") + 1] : String(Date.now() % 1000);
+const argv = process.argv.slice(2);
+const flag = (name: string) => (argv.includes(name) ? argv[argv.indexOf(name) + 1] : undefined);
+const seed = flag("--seed") ?? String(Date.now() % 1000);
 const out = `out/sim/demo-${seed}`;
-const persona = "rushed-guesser";
-const units = "kana-contrasts,L01-counters";
+const one = argv.includes("--one");
+const population = flag("--population") ?? "12";
 
-console.log(`\n1. Simulating a ${persona} through ${units} (seed ${seed}) against the live agent...\n`);
-const sim = spawnSync("pnpm", ["sim", "--seed", seed, "--personas", persona, "--units", units, "--out", out, "--concurrency", "4"], { stdio: "inherit" });
+const simArgs = one
+  ? ["--personas", "rushed-guesser", "--units", "kana-contrasts,L01-counters"]
+  : ["--population", population, "--cohort", `demo-${seed}`];
+console.log(one ? `\n1. Simulating one rushed learner through two units (seed ${seed}) against the live agent...\n` : `\n1. Simulating ${population} learners sampled by persona weight (seed ${seed}) against the live agent...\n`);
+const sim = spawnSync("pnpm", ["sim", "--seed", seed, ...simArgs, "--out", out, "--concurrency", "6"], { stdio: "inherit" });
 if (sim.status !== 0) process.exit(sim.status ?? 1);
 
 const outputs = readFileSync(`${out}/agent-outputs.jsonl`, "utf8")
@@ -34,6 +40,9 @@ const outputs = readFileSync(`${out}/agent-outputs.jsonl`, "utf8")
   .filter(Boolean)
   .map((l) => JSON.parse(l) as { sessionId: string; task: string; trapId?: string; result: { source?: string } });
 const sessions = [...new Set(outputs.map((o) => o.sessionId))];
+const busiest = Object.entries(outputs.reduce<Record<string, number>>((acc, o) => ((acc[o.sessionId] = (acc[o.sessionId] ?? 0) + 1), acc), {}))
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 4);
 const byTask = outputs.reduce<Record<string, number>>((acc, o) => ((acc[o.task] = (acc[o.task] ?? 0) + 1), acc), {});
 
 async function api<T>(url: string, body?: unknown, headers: Record<string, string> = {}): Promise<T | null> {
@@ -68,13 +77,14 @@ for (const b of dist?.data.buckets ?? []) for (const [id, n] of Object.entries(b
 const lens = `https://forge.coreweave.com/agent-lens/${project}`;
 console.log(`\n2. Open Agent Lens: ${lens}\n`);
 console.log(`   Just traced: ${outputs.length} turns (${Object.entries(byTask).map(([t, n]) => `${n} ${t}`).join(", ")}) in ${sessions.length} conversations.`);
-console.log(`   Search for a conversation id to read it as a chat:`);
-for (const s of sessions) console.log(`     ${s}`);
+console.log(`   Search for a conversation id to read it as a chat (busiest first):`);
+for (const [s, n] of busiest) console.log(`     ${s}  (${n} turns)`);
+if (sessions.length > busiest.length) console.log(`     ... and ${sessions.length - busiest.length} more; filter nihongo.cohort = ${one ? "(none)" : `demo-${seed}-<date>`}`);
 console.log(`   Each turn shows the tool spans (get_learner_state, lookup_item, grade_answer, lookup_rule) and the model call.`);
 console.log(`   Filter spans by attribute, e.g. nihongo.task = explain_miss, nihongo.trap_id = ${outputs.find((o) => o.trapId)?.trapId ?? "year-4-yonensei"}, nihongo.source = deterministic.`);
 const named = (versions?.versions ?? []).filter((v) => v.agent_version).sort((a, b) => a.agent_version.localeCompare(b.agent_version));
 if (named.length) {
-  console.log(`\n   Agent versions (compare v1's prompt with v2's grounded prompt):`);
+  console.log(`\n   Agent versions (each prompt change is a new version; compare tag rates between them):`);
   for (const v of named) console.log(`     ${v.agent_version.padEnd(10)} ${v.invocation_count} turns`);
 }
 if (tags?.data?.length) {

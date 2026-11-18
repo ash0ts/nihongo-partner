@@ -1,6 +1,8 @@
 {
-  "project": "wandb/nihongo-partner",
-  "agent_name_filter": ["nihongo-sensei"],
+  "project": "wandb/nihongo-sensei",
+  "agent_name_filter": [
+    "nihongo-sensei"
+  ],
   "tags": [
     {
       "name": "trap-not-named",
@@ -15,7 +17,7 @@
     {
       "name": "scope-creep",
       "color": "#7c3aed",
-      "criteria": "Tag this conversation when Sensei introduces grammar, vocabulary, or kanji that the learner has not reached yet. The curriculum is Genki I Lessons 0 to 2: kana, numbers, time, age, X wa Y desu, the ko-so-a-do words, and the negative copula janai desu. Teaching particles like ga, ni, de, or o, verb conjugation, te-form, adjectives, keigo, or kanji beyond the digits counts as scope creep. Do not tag when Sensei only mentions a later topic in passing to say it comes later."
+      "criteria": "Tag this conversation when Sensei introduces grammar, vocabulary, or kanji that the learner has not reached yet. The curriculum is Genki I Lessons 0 to 2: kana, numbers, time, age, X wa Y desu, the ko-so-a-do words, and the negative copula janai desu. Teaching particles like ga, ni, de, or o, verb conjugation, te-form, adjectives, keigo, or kanji beyond the digits counts as scope creep. Do not tag a reply that declines an out-of-scope question and points the learner back to Lessons 0-2; that is correct behaviour. Katakana, long vowels, small っ, and loanwords are in scope. Do not tag when Sensei only mentions a later topic in passing to say it comes later."
     },
     {
       "name": "wrong-reading",
@@ -25,7 +27,13 @@
     {
       "name": "learner-stuck",
       "color": "#0369a1",
-      "criteria": "Tag this conversation when the learner appears stuck: the same trap id or item recurs across several turns, a checkpoint failed and the retry failed again (what_to_fix followed by further misses on the same items), or the learner asks for help on the same point more than twice. The purpose is to find learners who need a composed remedial set rather than another explanation. Do not tag a single miss that is corrected on the next attempt."
+      "criteria": "Tag this conversation when the learner appears stuck: the same trap id or item recurs across several turns, a checkpoint failed and the retry failed again (what_to_fix followed by further misses on the same items), the learner asks for help on the same point more than twice, or the learner has visibly stopped trying (answers like わかりません, ?, or blank submits on consecutive items) and Sensei keeps giving the same kind of explanation instead of changing approach. The purpose is to find learners who need a composed remedial set rather than another explanation. Do not tag a single miss that is corrected on the next attempt."
+    },
+    {
+      "name": "kanji-leak",
+      "color": "#0f766e",
+      "llm_judge_enabled": true,
+      "criteria": "Tag this conversation when Sensei's reply contains kanji (Chinese characters such as 魚, 食, 本, 私, 学生) anywhere in its text. The learner is in Genki I Lessons 0-2 and can read only hiragana, katakana, and Arabic digits, so any kanji in a reply is unreadable to them. Digits (0-9) and kana are not kanji. Do not tag kanji that appear only in the learner's own message; the judgement is about Sensei's text. Found by the offline feedback eval on the first population batch (19 of 1730 replies); the agent now falls back to the rule-based explanation when the model's text contains kanji, so new occurrences mean the guard failed."
     }
   ]
 }

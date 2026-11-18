@@ -68,12 +68,30 @@ export async function fetchTutorStatus(): Promise<TutorStatus | null> {
   }
 }
 
+const LEARNER_KEY = "nihongo-partner.learner-id";
+
+/** Random, local-only install id so one device's sessions group together in Agent Lens. Not tied to any account. */
+function learnerId(): string | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    let id = window.localStorage.getItem(LEARNER_KEY);
+    if (!id) {
+      id = `app-${Math.random().toString(36).slice(2, 10)}`;
+      window.localStorage.setItem(LEARNER_KEY, id);
+    }
+    return id;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function tutorPost<TReq, TRes>(path: string, body: TReq): Promise<TutorEnvelope<TRes>> {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   const t = token();
   if (t) headers["X-Sensei-Token"] = t;
   try {
-    const r = await fetch(`${base()}/api/tutor/${path}`, { method: "POST", headers, body: JSON.stringify(body) });
+    const payload = { learnerId: learnerId(), ...body };
+    const r = await fetch(`${base()}/api/tutor/${path}`, { method: "POST", headers, body: JSON.stringify(payload) });
     const data = (await r.json()) as TutorEnvelope<TRes>;
     if (!r.ok) return { ok: false, error: data.error ?? `HTTP ${r.status}` };
     return data;

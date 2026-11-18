@@ -24,6 +24,27 @@ export interface Persona {
   fatigueSlope: number;
   /** Display mode this persona studies in. */
   mode: "bridge" | "classroom" | "immersion";
+  /** Share of a realistic population (`pnpm sim --population N` samples by this). */
+  weight: number;
+  /** Edge-case behaviours layered on top of the accuracy model. */
+  quirks?: Quirks;
+}
+
+export interface Quirks {
+  /** Chance a typed answer is submitted empty (tapped Check too early). */
+  blankRate?: number;
+  /** Chance a correct typed answer carries paste noise: trailing 。, spaces, a stray full-width space. */
+  noiseRate?: number;
+  /** Chance of typing the English meaning instead of Japanese ("four" for よん). */
+  englishRate?: number;
+  /** After this many misses in a row the learner stops trying and types わかりません / ?. */
+  giveUpAfter?: number;
+  /** Types romaji even in classroom/immersion mode (where the app expects kana). */
+  romajiEverywhere?: boolean;
+  /** In the free-form sentence session, chance each message is off-topic or out of scope. */
+  offTopicRate?: number;
+  /** Runs the sentence session at all (default 0.4 in population mode). */
+  sentenceSessionRate?: number;
 }
 
 export const PERSONAS: Persona[] = [
@@ -38,6 +59,7 @@ export const PERSONAS: Persona[] = [
     romajiDependence: 0.5,
     fatigueSlope: 0.01,
     mode: "bridge",
+    weight: 0.3,
   },
   {
     id: "rushed-guesser",
@@ -50,6 +72,7 @@ export const PERSONAS: Persona[] = [
     romajiDependence: 0.8,
     fatigueSlope: 0.02,
     mode: "bridge",
+    weight: 0.12,
   },
   {
     id: "slow-accurate",
@@ -62,6 +85,7 @@ export const PERSONAS: Persona[] = [
     romajiDependence: 0.2,
     fatigueSlope: 0.005,
     mode: "classroom",
+    weight: 0.12,
   },
   {
     id: "romaji-dependent",
@@ -87,6 +111,7 @@ export const PERSONAS: Persona[] = [
     romajiDependence: 0.95,
     fatigueSlope: 0.01,
     mode: "bridge",
+    weight: 0.08,
   },
   {
     id: "kana-confuser",
@@ -99,6 +124,7 @@ export const PERSONAS: Persona[] = [
     romajiDependence: 0.3,
     fatigueSlope: 0.008,
     mode: "classroom",
+    weight: 0.06,
   },
   {
     id: "counter-trap-prone",
@@ -122,6 +148,90 @@ export const PERSONAS: Persona[] = [
     romajiDependence: 0.4,
     fatigueSlope: 0.01,
     mode: "bridge",
+    weight: 0.06,
+  },
+  {
+    id: "perfectionist",
+    description: "The ideal case: nearly everything right, rarely needs the Sensei. Most sessions produce no agent call at all.",
+    baseAccuracy: 0.99,
+    trapRates: {},
+    defaultTrapRate: 0.04,
+    msMean: 2600,
+    typedMsFactor: 1.4,
+    romajiDependence: 0.1,
+    fatigueSlope: 0.002,
+    mode: "classroom",
+    weight: 0.08,
+    quirks: { sentenceSessionRate: 0.7 },
+  },
+  {
+    id: "night-crammer",
+    description: "Starts sharp and fades hard: accuracy drops about six points per ten items, so late units are where the misses pile up.",
+    baseAccuracy: 0.92,
+    trapRates: {},
+    defaultTrapRate: 0.3,
+    msMean: 3000,
+    typedMsFactor: 1.6,
+    romajiDependence: 0.4,
+    fatigueSlope: 0.06,
+    mode: "bridge",
+    weight: 0.06,
+  },
+  {
+    id: "give-up-quitter",
+    description: "Edge case: after two misses in a row types わかりません or ? for the rest of the set. The Sensei has to notice the learner has stopped trying.",
+    baseAccuracy: 0.72,
+    trapRates: {},
+    defaultTrapRate: 0.5,
+    msMean: 2200,
+    typedMsFactor: 1.1,
+    romajiDependence: 0.6,
+    fatigueSlope: 0.02,
+    mode: "bridge",
+    weight: 0.04,
+    quirks: { giveUpAfter: 2 },
+  },
+  {
+    id: "romaji-only",
+    description: "Edge case: set the app to classroom mode but still types romaji for everything, so every typed kana answer is marked wrong and the Sensei must answer in kana without echoing romaji.",
+    baseAccuracy: 0.9,
+    trapRates: {},
+    defaultTrapRate: 0.25,
+    msMean: 3500,
+    typedMsFactor: 1.3,
+    romajiDependence: 1,
+    fatigueSlope: 0.01,
+    mode: "classroom",
+    weight: 0.03,
+    quirks: { romajiEverywhere: true },
+  },
+  {
+    id: "sloppy-typist",
+    description: "Edge case: right answers with paste noise (trailing 。, spaces), the odd blank submit, and the occasional English word. Tests how the grader and the Sensei handle near-misses.",
+    baseAccuracy: 0.9,
+    trapRates: {},
+    defaultTrapRate: 0.3,
+    msMean: 2800,
+    typedMsFactor: 1.3,
+    romajiDependence: 0.3,
+    fatigueSlope: 0.01,
+    mode: "bridge",
+    weight: 0.03,
+    quirks: { blankRate: 0.08, noiseRate: 0.35, englishRate: 0.08 },
+  },
+  {
+    id: "off-topic-asker",
+    description: "Edge case: uses the sentence checker as a general chatbot: asks about kanji, て-form, how to say things, or just chats. Scope control is the whole test.",
+    baseAccuracy: 0.85,
+    trapRates: {},
+    defaultTrapRate: 0.35,
+    msMean: 3500,
+    typedMsFactor: 1.5,
+    romajiDependence: 0.5,
+    fatigueSlope: 0.01,
+    mode: "bridge",
+    weight: 0.02,
+    quirks: { offTopicRate: 0.7, sentenceSessionRate: 1 },
   },
 ];
 

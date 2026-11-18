@@ -73,14 +73,14 @@ Every answer you give is logged as an `InteractionEvent` (`src/engine/events.ts`
 
 Sensei works with no credentials at all (it says `rule` instead of `written for you`). To let it write:
 
-- **CoreWeave Forge Inference:** run `wandb login` (writes `~/.netrc`) or export `WANDB_API_KEY`. The default model is `zai-org/GLM-5.3-Flash` with reasoning disabled; override with `FORGE_MODEL`, and set `FORGE_PROJECT` to change the Forge project (default `wandb/nihongo-partner`).
+- **CoreWeave Forge Inference:** run `wandb login` (writes `~/.netrc`) or export `WANDB_API_KEY`. The default model is `zai-org/GLM-5.3-Flash` with reasoning disabled; override with `FORGE_MODEL`, and set `FORGE_PROJECT` to change the Forge project (default `wandb/nihongo-sensei`).
 - **OpenAI-compatible endpoint:** export `OPENAI_API_KEY` (plus optional `OPENAI_BASE_URL` and `OPENAI_MODEL`).
 
 Credentials are read strictly inside Node (`server/credentials.ts`) and never enter client bundles, `localStorage`, or Git. `pnpm dev` mounts the agent into Vite; `pnpm sensei` runs it standalone on port 5179. Callers from any address other than localhost must present the token the server prints at startup (`?sensei=<token>` on the page URL stores it for the session), so `pnpm dev:phone` does not turn your key into an open relay.
 
 ### Agent Lens tracing
 
-Every Sensei turn is traced to Forge Agent Lens in `wandb/nihongo-partner` with the `@coreweave/forge-sdk`: one conversation per learner session, one turn per request, each tool call (`get_learner_state`, `lookup_item`, `grade_answer`, `lookup_rule`, `compose_exercise_set`) as its own span, and the model call with token usage. Each turn carries `nihongo.*` attributes (`task`, `mode`, `unit_id`, `persona`, `trap_id`, `source`, `prompt_variant`) so you can slice by trap or by orthography mode. Set `FORGE_TRACING=0` to turn it off.
+Every Sensei turn is traced to Forge Agent Lens in `wandb/nihongo-sensei` with the `@coreweave/forge-sdk`: one conversation per learner session, one turn per request, each tool call (`get_learner_state`, `lookup_item`, `grade_answer`, `lookup_rule`, `compose_exercise_set`) as its own span, and the model call with token usage. Each turn carries `nihongo.*` attributes (`task`, `mode`, `unit_id`, `persona`, `trap_id`, `source`, `prompt_variant`) so you can slice by trap or by orthography mode. Set `FORGE_TRACING=0` to turn it off.
 
 Five Agent Lens tags watch the conversations for the failure modes that matter for a tutor: `trap-not-named`, `romaji-leak`, `scope-creep`, `wrong-reading`, `learner-stuck`. Their definitions live in [`agentlens/tags.json`](agentlens/tags.json) and are explained in [`agentlens/tags.md`](agentlens/tags.md); `pnpm tags` syncs them to the project and `pnpm tags --dist` prints last week's counts.
 
@@ -90,11 +90,12 @@ Five Agent Lens tags watch the conversations for the failure modes that matter f
 
 ## Simulations and evals
 
-To see how Sensei behaves across many learners without waiting for real ones, `sim/` runs rule-based personas (`steady-median`, `rushed-guesser`, `slow-accurate`, `romaji-dependent`, `kana-confuser`, `counter-trap-prone`) through real units: drill, checkpoint, retry, with every miss sent to Sensei. Personas slip into the catalogued traps at persona-specific rates, so the resulting conversations exercise exactly the confusions the tags look for.
+To see how Sensei behaves across many learners without waiting for real ones, `sim/` runs rule-based personas through real units: drill, checkpoint, retry, with every miss sent to Sensei. Twelve personas cover the range from ideal to edge case: `perfectionist` and `slow-accurate` rarely need help; `steady-median` is the typical crammer; `rushed-guesser`, `night-crammer`, `romaji-dependent`, `kana-confuser` and `counter-trap-prone` each fall for a different family of traps; `give-up-quitter` types わかりません after two misses, `romaji-only` types romaji in a kana-only mode, `sloppy-typist` submits blanks and paste noise, and `off-topic-asker` uses the sentence checker as a chatbot. Each persona has a population weight, so `--population N` samples a realistic class and walks each learner through a 2-5 unit journey with progress carried forward.
 
 ```bash
 pnpm sim --no-llm                 # deterministic, offline, seconds; same events, no model calls
-pnpm sim --seed 7                 # traced run against the live agent (needs a W&B key)
+pnpm sim --seed 7                 # the persona x unit grid against the live agent (needs a W&B key)
+pnpm sim --population 120 --seed 21 --cohort pop-a   # a weighted population; nihongo.cohort filters it in Agent Lens
 pnpm sim:freeze out/sim/run-7 evals/datasets sim-v1   # freeze a run into committed datasets
 ```
 
