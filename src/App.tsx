@@ -2,6 +2,8 @@ import { useRef, useState } from "react";
 import type { DisplayMode } from "./content/schema";
 import type { AppTab } from "./content/sprint";
 import { STUDY_PATH } from "./content/study-path";
+import type { DrillItem } from "./engine/drills";
+import { appendEvent, type InteractionPhase, makeEvent, makeSessionId } from "./engine/events";
 import { jumpToUnit } from "./engine/path";
 import {
   addUnitElapsed,
@@ -20,6 +22,7 @@ import { NumbersTab } from "./ui/NumbersTab";
 import { PathTab } from "./ui/PathTab";
 import { SenseiTab } from "./ui/SenseiTab";
 import { SprintTab } from "./ui/SprintTab";
+import { TutorProvider } from "./ui/TutorContext";
 import { VocabTab } from "./ui/VocabTab";
 
 const MODE_SHORT: Record<DisplayMode, string> = {
@@ -44,6 +47,7 @@ export default function App() {
   const [senseiScenarioId, setSenseiScenarioId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const sessionId = useRef(makeSessionId());
 
   const updateProgress = (updater: (prev: ProgressSnapshot) => ProgressSnapshot) => {
     setProgress((prev) => {
@@ -60,6 +64,23 @@ export default function App() {
     ms: number,
   ) => {
     updateProgress((prev) => recordReview(prev, id, category, isCorrect, ms));
+  };
+
+  /** Path drills report the full item so the event log can keep the learner's actual input. */
+  const handleDrillAnswer = (item: DrillItem, isCorrect: boolean, ms: number, input: string, phase: InteractionPhase) => {
+    updateProgress((prev) => {
+      const withReview = recordReview(prev, item.id, item.category, isCorrect, ms);
+      const event = makeEvent({
+        item,
+        sessionId: sessionId.current,
+        mode: prev.displayMode,
+        input,
+        correct: isCorrect,
+        ms,
+        phase,
+      });
+      return { ...withReview, events: appendEvent(withReview.events, event) };
+    });
   };
 
   const handleRecordCheckpoint = (unitId: string, score: number, passBar: number) => {
@@ -141,6 +162,7 @@ export default function App() {
             ...parsed,
             sprintBlocks: parsed.sprintBlocks ?? {},
             pathUnits: parsed.pathUnits ?? {},
+            events: Array.isArray(parsed.events) ? parsed.events : [],
           };
           saveProgress(normalized);
           setProgress(normalized);
@@ -153,6 +175,7 @@ export default function App() {
   };
 
   return (
+    <TutorProvider sessionId={sessionId.current} mode={progress.displayMode} events={progress.events}>
     <div className="min-h-screen bg-stone-50 text-stone-900">
       {/* Sticky Top Control Bar: one title row, one scrollable nav row; settings fold away on phones */}
       <header className="sticky top-0 z-20 border-b border-stone-300 bg-stone-50/95 backdrop-blur pt-[env(safe-area-inset-top)]">
@@ -270,7 +293,7 @@ export default function App() {
             progress={progress}
             mode={progress.displayMode}
             slowAudio={progress.slowAudio}
-            onRecordReview={handleRecordReview}
+            onDrillAnswer={handleDrillAnswer}
             onRecordCheckpoint={handleRecordCheckpoint}
             onSkipUnit={handleSkipUnit}
             onJumpToUnit={handleJumpToUnit}
@@ -329,5 +352,6 @@ export default function App() {
         )}
       </main>
     </div>
+    </TutorProvider>
   );
 }

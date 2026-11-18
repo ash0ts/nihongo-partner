@@ -2,19 +2,16 @@ import { useEffect, useState } from "react";
 import { ALL_GRAMMAR, ALL_ROLEPLAYS, ALL_VOCAB } from "../content";
 import type { DisplayMode } from "../content/schema";
 import { speakJapanese } from "../engine/speech";
+import { fetchTutorStatus, tutorPost } from "../engine/tutor-client";
+import type { TutorStatus } from "../engine/tutor-types";
 import { JapaneseLineView } from "./RubyText";
+import { useTutor } from "./TutorContext";
 
 interface SenseiTabProps {
   mode: DisplayMode;
   slowAudio: boolean;
   /** Scenario to open first (deep link from the Study Path roleplay units). */
   initialScenarioId?: string | null;
-}
-
-interface TutorStatus {
-  available: boolean;
-  provider: string | null;
-  model: string | null;
 }
 
 interface ChatTurn {
@@ -39,6 +36,9 @@ export function SenseiTab({ mode, slowAudio, initialScenarioId = null }: SenseiT
     available: false,
     provider: null,
     model: null,
+    tracing: false,
+    project: null,
+    tokenRequired: false,
   });
   const [tutorMode, setTutorMode] = useState<"roleplay" | "grade">("roleplay");
   const [chatHistory, setChatHistory] = useState<ChatTurn[]>([
@@ -54,17 +54,12 @@ export function SenseiTab({ mode, slowAudio, initialScenarioId = null }: SenseiT
   const [loadingTutor, setLoadingTutor] = useState(false);
   const [tutorError, setTutorError] = useState<string | null>(null);
 
+  const tutor = useTutor();
   useEffect(() => {
-    fetch("/api/tutor/status")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (data && typeof data.available === "boolean") {
-          setTutorStatus(data as TutorStatus);
-        }
-      })
-      .catch(() => {
-        // Static build or offline: keep deterministic roleplays active
-      });
+    // Static build or offline: null status keeps deterministic roleplays active
+    fetchTutorStatus().then((s) => {
+      if (s) setTutorStatus(s);
+    });
   }, []);
 
   const scenario = ALL_ROLEPLAYS[scenarioIdx % ALL_ROLEPLAYS.length];
@@ -80,25 +75,19 @@ export function SenseiTab({ mode, slowAudio, initialScenarioId = null }: SenseiT
     setUserDraft("");
 
     try {
-      const resp = await fetch("/api/tutor/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: tutorMode,
-          scenarioTitle: "Week-1 Genki Classroom & Café Icebreaker",
-          allowedGrammar: ALL_GRAMMAR.map((g) => `${g.code} ${g.formula}`),
-          allowedVocab: ALL_VOCAB.slice(0, 50).map((v) => `${v.kana} (${v.en})`),
-          history: chatHistory.map((c) => ({ role: c.role, content: c.jp })),
-          userMessage: trimmed,
-        }),
+      const payload = await tutorPost<Record<string, unknown>, Record<string, unknown>>("chat", {
+        mode: tutorMode,
+        displayMode: mode,
+        sessionId: tutor.sessionId,
+        recentEvents: tutor.recentEvents(),
+        scenarioTitle: "Week-1 Genki Classroom & Café Icebreaker",
+        allowedGrammar: ALL_GRAMMAR.map((g) => `${g.code} ${g.formula}`),
+        allowedVocab: ALL_VOCAB.slice(0, 50).map((v) => `${v.kana} (${v.en})`),
+        history: chatHistory.map((c) => ({ role: c.role, content: c.jp })),
+        userMessage: trimmed,
       });
-      const payload = (await resp.json()) as {
-        ok?: boolean;
-        error?: string;
-        result?: Record<string, unknown>;
-      };
 
-      if (!resp.ok || !payload.ok) {
+      if (!payload.ok) {
         setTutorError(payload.error || "Live Sensei call failed.");
         setLoadingTutor(false);
         return;

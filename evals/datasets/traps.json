@@ -1,0 +1,146 @@
+[
+  {
+    "id": "particle-wa-ha",
+    "label": "Topic は written as わ",
+    "rule": "The topic particle is pronounced wa but always written は. Only the word わたし starts with わ.",
+    "category": "grammar"
+  },
+  {
+    "id": "kore-kono",
+    "label": "これ vs この",
+    "rule": "これ stands alone as a noun (this one); この must be followed by a noun (this pen). Same split for それ/その and あれ/あの.",
+    "category": "grammar"
+  },
+  {
+    "id": "year-4-yonensei",
+    "label": "4th-year student is よねんせい",
+    "rule": "Before ねんせい, four is よ, not よん: よねんせい. The ん is dropped.",
+    "category": "counter"
+  },
+  {
+    "id": "hour-4-yoji",
+    "label": "4:00 is よじ",
+    "rule": "Four o'clock is よじ. Neither よんじ nor しじ exists.",
+    "category": "counter"
+  },
+  {
+    "id": "hour-7-shichiji",
+    "label": "7:00 is しちじ",
+    "rule": "Seven o'clock is しちじ in Genki. ななじ is only heard in announcements for clarity.",
+    "category": "counter"
+  },
+  {
+    "id": "hour-9-kuji",
+    "label": "9:00 is くじ",
+    "rule": "Nine o'clock is くじ, never きゅうじ.",
+    "category": "counter"
+  },
+  {
+    "id": "minute-pun-fun",
+    "label": "ぷん vs ふん minutes",
+    "rule": "Minutes ending in 1, 3, 4, 6, 8, 10 take ぷん (いっぷん, さんぷん, よんぷん, ろっぷん, はっぷん, じゅっぷん); the rest take ふん.",
+    "category": "counter"
+  },
+  {
+    "id": "age-20-hatachi",
+    "label": "20 years old is はたち",
+    "rule": "Twenty years old has its own word, はたち. Genki does not accept にじゅっさい.",
+    "category": "counter"
+  },
+  {
+    "id": "age-sai-clipping",
+    "label": "いっさい / はっさい / じゅっさい",
+    "rule": "Before さい, いち becomes いっ, はち becomes はっ, and じゅう becomes じゅっ.",
+    "category": "counter"
+  },
+  {
+    "id": "hundreds-voicing",
+    "label": "300 / 600 / 800",
+    "rule": "Hundreds mutate: さんびゃく (b after ん), ろっぴゃく and はっぴゃく (small っ plus p). Every other hundred is plain ひゃく.",
+    "category": "counter"
+  },
+  {
+    "id": "thousands-voicing",
+    "label": "3,000 / 8,000",
+    "rule": "Thousands mutate twice: さんぜん (z after ん) and はっせん (small っ). Everything else is plain せん.",
+    "category": "counter"
+  },
+  {
+    "id": "man-grouping",
+    "label": "10,000 is いちまん",
+    "rule": "Japanese groups large numbers by ten thousand (まん), and 10,000 itself needs いち: いちまん, never just まん.",
+    "category": "counter"
+  },
+  {
+    "id": "voicing-marks",
+    "label": "Dakuten voicing",
+    "rule": "Two small ticks voice the consonant (か→が, さ→ざ, た→だ, は→ば); the small circle on the は row makes p (ぱ).",
+    "category": "kana"
+  },
+  {
+    "id": "sokuon-long-vowel",
+    "label": "Small っ and long vowels",
+    "rule": "Small っ doubles the next consonant (きって = kitte) and a repeated vowel or ー stretches the sound (おおきい = ookii). Dropping either changes the word.",
+    "category": "kana"
+  },
+  {
+    "id": "pair-shi-tsu",
+    "label": "シ / ツ lookalikes",
+    "rule": "Look at the two small ticks! シ stacks ticks vertically on the LEFT and sweeps UP-right (horizontal alignment, like Hiragana し's upward hook). ツ lines ticks side-by-side at the TOP and drops DOWN-left (like Hiragana つ starting across the top).",
+    "category": "kana"
+  },
+  {
+    "id": "pair-so-n",
+    "label": "ソ / ン lookalikes",
+    "rule": "Exact same geometry rule as ツ vs シ! ソ starts at the TOP and drops steeply DOWN-left (matches ツ). ン has a horizontal left tick and sweeps UP-right from the bottom (matches シ).",
+    "category": "kana"
+  },
+  {
+    "id": "pair-ha-ho",
+    "label": "は / ほ lookalikes",
+    "rule": "Count the horizontal bars on the right! は has ONE bar and its vertical stem pokes out the top. ほ has TWO bars (top bar acts as a flat roof/hat so nothing pokes above it: 'ho-ho-ho' Santa hat).",
+    "category": "kana"
+  },
+  {
+    "id": "pair-sa-ki",
+    "label": "さ / き lookalikes",
+    "rule": "Count the crossbars! さ has ONE crossbar ('sa'-lsa). き has TWO teeth like a house 'key'. (Note: in print fonts the bottom curve connects; in handwriting there's a small gap—both are the same letter.)",
+    "category": "kana"
+  },
+  {
+    "id": "pair-ne-re-wa",
+    "label": "ね / れ / わ lookalikes",
+    "rule": "Left side is identical on all three—only inspect the bottom-right ending! ね curls into a 'ne'-ko (cat) tail loop; れ kicks OUTWARD like a 're'-lay sprinter; わ curves smoothly INWARD like a round 'wa'-sp belly.",
+    "category": "kana"
+  },
+  {
+    "id": "pair-nu-me",
+    "label": "ぬ / め lookalikes",
+    "rule": "ぬ ends in an extra 'nu'-dle (noodle) pigtail loop; め stops cleanly in a smooth eye curve with no loop.",
+    "category": "kana"
+  },
+  {
+    "id": "pair-ru-ro",
+    "label": "る / ろ lookalikes",
+    "rule": "る wraps a 'ru'-by loop at the bottom; ろ is a plain '3' road with zero loop.",
+    "category": "kana"
+  },
+  {
+    "id": "pair-u-wa-fu",
+    "label": "ウ / ワ / フ lookalikes",
+    "rule": "Subtract strokes step by step: ウ has a top chimney tick + left wall; ワ drops the top tick (just left wall + curve); フ drops BOTH (just roof + right curve).",
+    "category": "kana"
+  },
+  {
+    "id": "pair-ma-mu-a",
+    "label": "マ / ム / ア lookalikes",
+    "rule": "マ folds DOWN from a horizontal top bar into a short center tick; ム builds UP from a flat bottom triangle base; ア drops a long curving leg all the way down.",
+    "category": "kana"
+  },
+  {
+    "id": "pair-ku-ke-ta",
+    "label": "ク / ケ / タ lookalikes",
+    "rule": "ク is clean inside; タ adds a taco-filling tick inside ク; ケ extends the horizontal bar out to the right.",
+    "category": "kana"
+  }
+]

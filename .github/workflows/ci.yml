@@ -20,3 +20,19 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm build
+      - name: Simulator (deterministic, no model calls)
+        run: pnpm sim --no-llm --out out/sim/ci
+      - name: Eval case files are up to date
+        run: |
+          pnpm export:eval-cases
+          pnpm export:composer-cases
+          git diff --exit-code -- evals/datasets/grading-cases.jsonl evals/datasets/traps.json evals/datasets/items.json || (echo "Run pnpm export:eval-cases and commit" && exit 1)
+      - uses: astral-sh/setup-uv@v5
+      - name: Evals (dry run: deterministic checks only)
+        working-directory: evals
+        run: |
+          uv sync --frozen
+          uv run nihongo-evals build-dataset --dry-run
+          uv run nihongo-evals grading --dry-run
+          uv run nihongo-evals feedback --dry-run
+          uv run nihongo-evals composer --dry-run

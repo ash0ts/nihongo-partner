@@ -2,7 +2,10 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import type { DisplayMode } from "../content/schema";
 import { type DrillItem, grade } from "../engine/drills";
 import { speakJapanese } from "../engine/speech";
+import { explainMiss } from "../engine/tutor-client";
+import type { ExplainMissResult } from "../engine/tutor-types";
 import { SegmentsView } from "./RubyText";
+import { useTutor } from "./TutorContext";
 
 interface DrillCardProps {
   item: DrillItem;
@@ -32,6 +35,8 @@ export function DrillCard({
 }: DrillCardProps) {
   const [typed, setTyped] = useState("");
   const [result, setResult] = useState<{ ok: boolean; input: string } | null>(null);
+  const tutor = useTutor();
+  const [sensei, setSensei] = useState<{ loading: boolean; result?: ExplainMissResult; error?: string } | null>(null);
   const shownAt = useRef<number>(Date.now());
   const inputRef = useRef<HTMLInputElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -39,6 +44,7 @@ export function DrillCard({
   useEffect(() => {
     setTyped("");
     setResult(null);
+    setSensei(null);
     shownAt.current = Date.now();
     const t = window.setTimeout(() => inputRef.current?.focus(), 30);
     return () => window.clearTimeout(t);
@@ -64,6 +70,24 @@ export function DrillCard({
       return;
     }
     if (typed.trim()) submit(typed);
+  };
+
+  const askSensei = async () => {
+    if (!result || result.ok || sensei?.loading) return;
+    setSensei({ loading: true });
+    const res = await explainMiss({
+      sessionId: tutor.sessionId,
+      mode: tutor.mode,
+      unitId: item.sourceUnitId || undefined,
+      recentEvents: tutor.recentEvents(),
+      itemId: item.id,
+      variantKey: item.variantKey,
+      input: result.input,
+      expected: item.answerDisplay,
+      promptText: item.prompt.text ?? item.prompt.segments?.map((s) => s.text).join(""),
+    });
+    if (res.ok && res.result) setSensei({ loading: false, result: res.result });
+    else setSensei({ loading: false, error: res.error ?? "Sensei unavailable" });
   };
 
   const isBigGlyph = BIG_GLYPH_SKILLS.has(item.skill) && item.prompt.text;
@@ -162,7 +186,29 @@ export function DrillCard({
           {variant === "drill" && item.trapWarning && (
             <p className="mt-1 text-xs font-medium">Trap: {item.trapWarning}</p>
           )}
-          <div className="mt-3 flex justify-end">
+          {sensei?.result && (
+            <div className="mt-2 rounded border border-stone-300 bg-white/70 p-2 text-xs text-stone-800">
+              <div className="mono-label text-[10px] uppercase text-stone-500">
+                Sensei {sensei.result.source === "llm" ? "(written for you)" : "(rule)"}
+                {sensei.result.trapLabel && ` · ${sensei.result.trapLabel}`}
+              </div>
+              <p className="mt-0.5 leading-relaxed">{sensei.result.explanation}</p>
+            </div>
+          )}
+          {sensei?.error && <p className="mt-2 text-xs text-stone-600">Sensei: {sensei.error}</p>}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+            {!result.ok && tutor.status?.available && !sensei?.result ? (
+              <button
+                type="button"
+                onClick={askSensei}
+                disabled={sensei?.loading}
+                className="rounded border border-stone-400 bg-white px-3 py-1.5 text-xs font-medium text-stone-800 hover:bg-stone-100 cursor-pointer disabled:opacity-60"
+              >
+                {sensei?.loading ? "Asking Sensei…" : "Why was that wrong?"}
+              </button>
+            ) : (
+              <span />
+            )}
             <button
               ref={nextRef}
               type="button"

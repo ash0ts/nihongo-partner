@@ -1,0 +1,31 @@
+{
+  "project": "wandb/nihongo-partner",
+  "agent_name_filter": ["nihongo-sensei"],
+  "tags": [
+    {
+      "name": "trap-not-named",
+      "color": "#d97706",
+      "criteria": "Tag this conversation when the learner's miss is one of the catalogued traps (the turn carries a nihongo.trap_id attribute such as year-4-yonensei, hour-4-yoji, age-20-hatachi, particle-wa-ha, kore-kono, hundreds-voicing, pair-shi-tsu) but Sensei's reply never names the specific confusion or the rule behind it. A reply that only says the answer was wrong, restates the correct answer, or gives a generic encouragement without explaining WHY this particular pair or reading trips people up should be tagged. Do not tag when the reply names the contrast (e.g. 'four o'clock is yoji, not yonji') even briefly."
+    },
+    {
+      "name": "romaji-leak",
+      "color": "#dc2626",
+      "criteria": "Tag this conversation when the learner is in 'classroom' or 'immersion' display mode (nihongo.mode attribute) and Sensei's reply uses romaji (Latin-letter transliteration of Japanese such as 'yoji', 'hatachi', 'wa', 'kore') to spell out Japanese words instead of kana. In 'bridge' mode romaji is allowed and must NOT be tagged. Kana-reading drills (item ids starting with kana-, voiced-, or mech-, where the learner's task is to type the romaji reading of a kana) are also exempt, because stating the reading in romaji is the lesson. English explanation and English translations of meaning are fine in every mode; only Latin spelling of Japanese words counts as a leak."
+    },
+    {
+      "name": "scope-creep",
+      "color": "#7c3aed",
+      "criteria": "Tag this conversation when Sensei introduces grammar, vocabulary, or kanji that the learner has not reached yet. The curriculum is Genki I Lessons 0 to 2: kana, numbers, time, age, X wa Y desu, the ko-so-a-do words, and the negative copula janai desu. Teaching particles like ga, ni, de, or o, verb conjugation, te-form, adjectives, keigo, or kanji beyond the digits counts as scope creep. Do not tag when Sensei only mentions a later topic in passing to say it comes later."
+    },
+    {
+      "name": "wrong-reading",
+      "color": "#be123c",
+      "criteria": "Tag this conversation when Sensei states a Japanese reading, kana, or fact that is incorrect. Examples of wrong statements: saying four o'clock is yonji (it is yoji), seven o'clock is nanaji (shichiji), nine o'clock is kyuuji (kuji), twenty years old is nijuusai (hatachi), 300 is sanhyaku (sanbyaku), 600 is rokuhyaku (roppyaku), 800 is hachihyaku (happyaku), or that the topic particle is written wa in kana (it is written ha). Also tag when Sensei confirms a learner's wrong answer as correct or marks a correct answer as wrong. Do not tag stylistic choices or alternative but valid readings."
+    },
+    {
+      "name": "learner-stuck",
+      "color": "#0369a1",
+      "criteria": "Tag this conversation when the learner appears stuck: the same trap id or item recurs across several turns, a checkpoint failed and the retry failed again (what_to_fix followed by further misses on the same items), or the learner asks for help on the same point more than twice. The purpose is to find learners who need a composed remedial set rather than another explanation. Do not tag a single miss that is corrected on the next attempt."
+    }
+  ]
+}

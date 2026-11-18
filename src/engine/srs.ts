@@ -1,3 +1,5 @@
+import type { InteractionEvent } from "./events";
+
 export type MasteryLevel = "unseen" | "shaky" | "learning" | "solid";
 
 export interface ItemMastery {
@@ -48,6 +50,8 @@ export interface ProgressSnapshot {
   sprintBlocks: Record<string, SprintBlockState>;
   items: Record<string, ItemMastery>;
   pathUnits: Record<string, UnitProgress>;
+  /** Per-answer interaction log (bounded; see events.ts). Added after v1 launch, defaults to []. */
+  events: InteractionEvent[];
 }
 
 const STORAGE_KEY = "nihongo-partner.progress.v1";
@@ -63,6 +67,7 @@ export function createEmptySnapshot(): ProgressSnapshot {
     sprintBlocks: {},
     items: {},
     pathUnits: {},
+    events: [],
   };
 }
 
@@ -83,6 +88,7 @@ export function loadProgress(): ProgressSnapshot {
       items: parsed.items ?? {},
       sprintBlocks: parsed.sprintBlocks ?? {},
       pathUnits: parsed.pathUnits ?? {},
+      events: Array.isArray(parsed.events) ? parsed.events : [],
     };
   } catch {
     return createEmptySnapshot();

@@ -67,7 +67,7 @@ describe("drills: builders", () => {
     expect(item.options).toHaveLength(c01.options.length);
     expect(grade(item, "wa")).toBe(true);
     expect(grade(item, "は")).toBe(true);
-    expect(grade(item, "わ")).toBe(true);
+    expect(grade(item, "わ")).toBe(false); // the classic typo must stay wrong
     expect(grade(item, "の")).toBe(false);
     const typed = asTyped(item);
     expect(typed.answerKind).toBe("typed");

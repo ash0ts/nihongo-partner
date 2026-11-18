@@ -10,12 +10,22 @@ import {
   type TeachBlock,
 } from "../engine/path";
 import { speakJapanese } from "../engine/speech";
-import type { ItemMastery, ProgressSnapshot } from "../engine/srs";
+import type { InteractionPhase } from "../engine/events";
+import type { ProgressSnapshot } from "../engine/srs";
 import { Checkpoint, type CheckpointOutcome, CheckpointResult } from "./Checkpoint";
 import { DrillCard } from "./DrillCard";
 import { JapaneseLineView, SegmentsView } from "./RubyText";
 
 type Phase = "teach" | "drill" | "pre-checkpoint" | "checkpoint" | "result" | "retry" | "review" | "done";
+
+/** Every answered prompt flows through this: mastery update plus the interaction event log. */
+export type DrillAnswerHandler = (
+  item: DrillItem,
+  isCorrect: boolean,
+  ms: number,
+  input: string,
+  phase: InteractionPhase,
+) => void;
 
 const REVIEW_SIZE = 6;
 
@@ -26,7 +36,7 @@ interface UnitPlayerProps {
   mode: DisplayMode;
   slowAudio: boolean;
   isLastUnit: boolean;
-  onRecordReview: (id: string, category: ItemMastery["category"], isCorrect: boolean, ms: number) => void;
+  onDrillAnswer: DrillAnswerHandler;
   onRecordCheckpoint: (unitId: string, score: number, passBar: number) => void;
   onSkipUnit: (unitId: string) => void;
   onElapsed: (unitId: string, seconds: number) => void;
@@ -42,7 +52,7 @@ export function UnitPlayer({
   mode,
   slowAudio,
   isLastUnit,
-  onRecordReview,
+  onDrillAnswer,
   onRecordCheckpoint,
   onSkipUnit,
   onElapsed,
@@ -205,7 +215,7 @@ export function UnitPlayer({
           mode={effectiveMode}
           slowAudio={slowAudio}
           variant="drill"
-          onAnswer={(ok, ms) => onRecordReview(drillItems[drillIdx].id, drillItems[drillIdx].category, ok, ms)}
+          onAnswer={(ok, ms, input) => onDrillAnswer(drillItems[drillIdx], ok, ms, input, "drill")}
           onNext={() => {
             if (drillIdx + 1 >= drillItems.length) setPhase("pre-checkpoint");
             else setDrillIdx((i) => i + 1);
@@ -256,7 +266,7 @@ export function UnitPlayer({
           items={checkpointItems}
           mode={effectiveMode}
           slowAudio={slowAudio}
-          onRecordReview={onRecordReview}
+          onDrillAnswer={onDrillAnswer}
           onFinished={finishCheckpoint}
         />
       )}
@@ -285,7 +295,7 @@ export function UnitPlayer({
             mode={effectiveMode}
             slowAudio={slowAudio}
             variant="drill"
-            onAnswer={(ok, ms) => onRecordReview(retryItems[retryIdx].id, retryItems[retryIdx].category, ok, ms)}
+            onAnswer={(ok, ms, input) => onDrillAnswer(retryItems[retryIdx], ok, ms, input, "retry")}
             onNext={() => {
               if (retryIdx + 1 >= retryItems.length) startCheckpoint();
               else setRetryIdx((i) => i + 1);
@@ -308,8 +318,8 @@ export function UnitPlayer({
             mode={effectiveMode}
             slowAudio={slowAudio}
             variant="drill"
-            onAnswer={(ok, ms) => {
-              onRecordReview(reviewItems[reviewIdx].id, reviewItems[reviewIdx].category, ok, ms);
+            onAnswer={(ok, ms, input) => {
+              onDrillAnswer(reviewItems[reviewIdx], ok, ms, input, "review");
               if (ok) setReviewCorrect((c) => c + 1);
             }}
             onNext={() => {

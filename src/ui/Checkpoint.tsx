@@ -1,15 +1,21 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { DisplayMode } from "../content/schema";
 import type { DrillItem } from "../engine/drills";
 import type { StudyUnit } from "../engine/path";
-import type { ItemMastery } from "../engine/srs";
+import { trapForItem } from "../engine/traps";
+import { whatToFix } from "../engine/tutor-client";
+import type { WhatToFixResult } from "../engine/tutor-types";
 import { DrillCard } from "./DrillCard";
+import { useTutor } from "./TutorContext";
+import type { DrillAnswerHandler } from "./UnitPlayer";
 
 export interface CheckpointOutcome {
   score: number; // 0..1
   correct: number;
   total: number;
   missed: DrillItem[];
+  /** What the learner answered for each missed item, keyed by variantKey. */
+  inputs: Record<string, string>;
 }
 
 interface CheckpointProps {
@@ -17,25 +23,29 @@ interface CheckpointProps {
   items: DrillItem[];
   mode: DisplayMode;
   slowAudio: boolean;
-  onRecordReview: (id: string, category: ItemMastery["category"], isCorrect: boolean, ms: number) => void;
+  onDrillAnswer: DrillAnswerHandler;
   onFinished: (outcome: CheckpointOutcome) => void;
 }
 
 /** Fixed-length quiz with no hints; reports a score when the last item is answered. */
-export function Checkpoint({ unit, items, mode, slowAudio, onRecordReview, onFinished }: CheckpointProps) {
+export function Checkpoint({ unit, items, mode, slowAudio, onDrillAnswer, onFinished }: CheckpointProps) {
   const [idx, setIdx] = useState(0);
   const [correct, setCorrect] = useState(0);
   const [missed, setMissed] = useState<DrillItem[]>([]);
+  const [inputs, setInputs] = useState<Record<string, string>>({});
   const [lastOk, setLastOk] = useState<boolean | null>(null);
 
   const item = items[idx];
   if (!item) return null;
 
-  const handleAnswer = (ok: boolean, ms: number) => {
-    onRecordReview(item.id, item.category, ok, ms);
+  const handleAnswer = (ok: boolean, ms: number, input: string) => {
+    onDrillAnswer(item, ok, ms, input, "checkpoint");
     setLastOk(ok);
     if (ok) setCorrect((c) => c + 1);
-    else setMissed((m) => [...m, item]);
+    else {
+      setMissed((m) => [...m, item]);
+      setInputs((prev) => ({ ...prev, [item.variantKey]: input }));
+    }
   };
 
   const handleNext = () => {
@@ -47,6 +57,7 @@ export function Checkpoint({ unit, items, mode, slowAudio, onRecordReview, onFin
         correct: nextCorrect,
         total: items.length,
         missed: nextMissed,
+        inputs,
       });
       return;
     }
@@ -110,6 +121,34 @@ export function CheckpointResult({
 }: CheckpointResultProps) {
   const pct = Math.round(outcome.score * 100);
   const passed = !unit.gated || outcome.score >= unit.passBar;
+  const tutor = useTutor();
+  const [fix, setFix] = useState<WhatToFixResult | null>(null);
+
+  // Ask the Sensei agent what the misses have in common. Only when a server is present.
+  useEffect(() => {
+    if (!tutor.status?.available || outcome.missed.length === 0) return;
+    let live = true;
+    whatToFix({
+      sessionId: tutor.sessionId,
+      mode: tutor.mode,
+      unitId: unit.id,
+      recentEvents: tutor.recentEvents(),
+      unitTitle: unit.title,
+      missed: outcome.missed.map((m) => ({
+        itemId: m.id,
+        input: outcome.inputs[m.variantKey] ?? "",
+        expected: m.answerDisplay,
+        trapId: trapForItem(m)?.id,
+      })),
+    }).then((res) => {
+      if (live && res.ok && res.result) setFix(res.result);
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [unit.id, attempt]);
+
   return (
     <div
       className={`rounded-lg border p-6 ${
@@ -132,6 +171,15 @@ export function CheckpointResult({
             ? "Passed. A short cumulative review comes next so earlier material stays warm."
             : "Below the bar. Retry just the misses, then retake, or skip ahead and this unit stays flagged as not yet mastered."}
       </p>
+
+      {fix && (
+        <div className="mt-3 rounded border border-stone-300 bg-white/80 p-3 text-sm text-stone-900">
+          <div className="mono-label text-[10px] uppercase text-stone-500">
+            What to fix · Sensei {fix.source === "llm" ? "(written for you)" : "(rule)"}
+          </div>
+          <p className="mt-0.5 leading-relaxed">{fix.summary}</p>
+        </div>
+      )}
 
       {outcome.missed.length > 0 && (
         <div className="mt-4">

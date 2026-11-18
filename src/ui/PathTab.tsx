@@ -9,15 +9,18 @@ import {
   summarizeReadiness,
   type UnitDisplayStatus,
 } from "../engine/path";
-import type { ItemMastery, ProgressSnapshot } from "../engine/srs";
-import { UnitPlayer } from "./UnitPlayer";
+import type { ExerciseSet } from "../engine/composer";
+import type { DrillItem } from "../engine/drills";
+import type { ProgressSnapshot } from "../engine/srs";
+import { SenseiSetCard, SenseiSetPlayer } from "./SenseiSet";
+import { type DrillAnswerHandler, UnitPlayer } from "./UnitPlayer";
 
 interface PathTabProps {
   path: StudyPath;
   progress: ProgressSnapshot;
   mode: DisplayMode;
   slowAudio: boolean;
-  onRecordReview: (id: string, category: ItemMastery["category"], isCorrect: boolean, ms: number) => void;
+  onDrillAnswer: DrillAnswerHandler;
   onRecordCheckpoint: (unitId: string, score: number, passBar: number) => void;
   onSkipUnit: (unitId: string) => void;
   onJumpToUnit: (unitId: string) => void;
@@ -60,7 +63,7 @@ export function PathTab({
   progress,
   mode,
   slowAudio,
-  onRecordReview,
+  onDrillAnswer,
   onRecordCheckpoint,
   onSkipUnit,
   onJumpToUnit,
@@ -70,6 +73,7 @@ export function PathTab({
 }: PathTabProps) {
   const [openUnitId, setOpenUnitId] = useState<string | null>(null);
   const [pendingJump, setPendingJump] = useState<StudyUnit | null>(null);
+  const [senseiSet, setSenseiSet] = useState<{ set: ExerciseSet; items: DrillItem[] } | null>(null);
 
   const statuses = useMemo(() => {
     const map = new Map<string, UnitDisplayStatus>();
@@ -89,6 +93,20 @@ export function PathTab({
     else setOpenUnitId(null);
   };
 
+  if (senseiSet) {
+    return (
+      <SenseiSetPlayer
+        key={senseiSet.set.id}
+        set={senseiSet.set}
+        items={senseiSet.items}
+        mode={mode}
+        slowAudio={slowAudio}
+        onDrillAnswer={onDrillAnswer}
+        onExit={() => setSenseiSet(null)}
+      />
+    );
+  }
+
   if (openUnit) {
     const idx = path.units.findIndex((u) => u.id === openUnit.id);
     return (
@@ -100,7 +118,7 @@ export function PathTab({
         mode={mode}
         slowAudio={slowAudio}
         isLastUnit={idx === path.units.length - 1}
-        onRecordReview={onRecordReview}
+        onDrillAnswer={onDrillAnswer}
         onRecordCheckpoint={onRecordCheckpoint}
         onSkipUnit={onSkipUnit}
         onElapsed={onElapsed}
@@ -239,6 +257,8 @@ export function PathTab({
 
         {/* Readiness panel */}
         <aside className="min-w-0 space-y-4 lg:sticky lg:top-28 lg:self-start">
+          <SenseiSetCard path={path} events={progress.events} mode={mode} onStart={(set, items) => setSenseiSet({ set, items })} />
+
           <section className="rounded-lg border border-stone-300 bg-white p-4">
             <h3 className="text-sm font-semibold text-stone-900">Ready for class?</h3>
             <ul className="mt-2 space-y-1.5">

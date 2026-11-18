@@ -1,0 +1,21 @@
+[project]
+name = "nihongo-evals"
+version = "0.1.0"
+description = "Offline evals for the Nihongo Partner Sensei agent (Weave datasets, W&B EvalTables, LLM judge)."
+requires-python = ">=3.12"
+dependencies = [
+  "wandb>=0.31",
+  "weave>=0.53",
+  "openai>=1.60",
+  "httpx>=0.27",
+]
+
+[project.scripts]
+nihongo-evals = "nihongo_evals.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["nihongo_evals"]

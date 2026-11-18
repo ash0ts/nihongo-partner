@@ -234,8 +234,9 @@ export function isAnswerAccepted(
     if (normalizedUser === normalizedTarget) {
       return true;
     }
-    // Topic particle は typed phonetically as わ in romaji ("wa")
-    if (normalizedTarget === "は" && (cleanRaw === "wa" || cleanRaw === "ha" || normalizedUser === "わ")) {
+    // Topic particle は typed phonetically in romaji ("wa"). Kana わ is NOT accepted:
+    // writing わ for the topic particle is the Week-1 typo the cloze drills exist to catch.
+    if (normalizedTarget === "は" && (cleanRaw === "wa" || cleanRaw === "ha")) {
       return true;
     }
   }

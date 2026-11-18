@@ -22,7 +22,7 @@ The app is a static site, so it runs anywhere a browser does. Three ways in, fro
 
 1. **Hosted (any network):** open **https://ash0ts.github.io/nihongo-partner/** on your phone. Every push to `main` rebuilds and redeploys it through GitHub Pages (`.github/workflows/pages.yml`). Your phone never needs to reach your laptop.
 2. **Add to Home Screen:** the site ships as a PWA. In Safari tap Share, then *Add to Home Screen*; in Chrome on Android use the menu, then *Install app*. It opens full screen with its own icon and keeps working offline after the first load.
-3. **Same Wi-Fi as your laptop:** run `pnpm dev:phone` and open the `Network:` URL Vite prints (something like `http://192.168.1.20:5178`). This is the only mode where the live Sensei tutor works, because the inference proxy lives in the Vite dev server. Corporate or guest Wi-Fi often blocks phone-to-laptop traffic; if the page never loads, use option 1.
+3. **Same Wi-Fi as your laptop:** run `pnpm dev:phone` and open the phone URL it prints (it includes a `?sensei=` token). This is the only mode where the live Sensei tutor works, because the agent runs inside the dev server. Corporate or guest Wi-Fi often blocks phone-to-laptop traffic; if the page never loads, use option 1.
 
 Progress lives in each browser's `localStorage`, so the phone and the laptop keep separate records. To move progress between them, tap *Export JSON* on one device and *Import* the file on the other (AirDrop, iCloud Drive, or email all work). On a phone the header folds the mode and audio settings behind a single button at the top right.
 
@@ -52,20 +52,63 @@ Trying to handwrite 92 kana characters from memory during a single-day cram eats
 3. **Algorithmic counter & phonetic-shift solver** (`Numbers, Time & Yen`): live solver + trap-weighted quiz covering `10^4 まん` yen grouping, irregular hours (`よじ`, `しちじ`, `くじ`), `-ぷん` vs `-ふん` minute triggers, `よねんせい` (4th-year student), and `はたち` (20 years old).
 4. **Classroom survival & active flashcards** (`Vocab & Classroom p.81`): prioritizes spoken recovery phrases (`ゆっくり いってください`, `もういちど いってください`, `わかりません`) alongside Lesson 0–2 vocabulary and Lesson 3–4 bridge previews.
 5. **Three live orthography modes** (header toggle): graduate from `Romaji Bridge (Hrs 1–4)` to `L3 Class Mode (Furigana, No Romaji)` in Hour 5 so tonight's textbook format already feels familiar.
-6. **Sensei roleplay & sentence check** (`Sensei Roleplay`): deterministic offline multi-turn classroom/shop simulations plus an optional server-side dev proxy (`/api/tutor`) backed by CoreWeave Forge Serverless Inference (`WANDB_API_KEY` or `~/.netrc`) or any OpenAI-compatible API.
+6. **Sensei roleplay & sentence check** (`Sensei Roleplay`): deterministic offline multi-turn classroom/shop simulations plus the optional Sensei agent (`server/`, see below) backed by CoreWeave Forge Serverless Inference or any OpenAI-compatible API.
 
 ## Standalone Markdown study guide
 
 Prefer reading a single printable reference sheet alongside or away from the app? Open [`docs/6-hour-cram-playbook.md`](docs/6-hour-cram-playbook.md).
 
-## Optional live Sensei setup
+## The Sensei agent
 
-Deterministic drills, `ja-JP` browser speech playback, and FSRS-lite `localStorage` mastery tracking run 100% offline. To enable live free-form roleplay and custom sentence grading during `pnpm dev`:
+Deterministic drills, `ja-JP` browser speech playback, and FSRS-lite `localStorage` mastery tracking run 100% offline. On top of that sits an optional tutor agent, **Sensei**, which runs server side in `server/` and is reached through `/api/tutor`. It shows up in four places:
 
-- **CoreWeave Forge Inference:** run `wandb login` (writes `~/.netrc`) or export `WANDB_API_KEY` (optional `FORGE_INFERENCE_PROJECT` and `FORGE_INFERENCE_MODEL`, defaulting to `zai-org/GLM-5.3-Flash` with reasoning disabled for fast turns).
+- **Why was that wrong?** on any missed drill item. Sensei looks up the item, grades the answer, finds the matching trap in the catalog, and writes a two-sentence explanation. Without a model it still answers from the trap rule.
+- **What to fix** after a failed checkpoint: the one or two confusions behind the misses and what to practise next.
+- **Sensei set** on the Path tab: ten items composed from your own answer log (see below).
+- **Sensei Roleplay** tab: free-form sentence grading and roleplay turns.
+
+Every answer you give is logged as an `InteractionEvent` (`src/engine/events.ts`: item, your input, the expected answer, right or wrong, time taken, and the trap id if the item is a known trap). The log lives in the same `localStorage` snapshot as your progress, capped at 3000 events, and is what Sensei reads instead of guessing. Nothing is sent anywhere unless the server is running.
+
+### Turning the model on
+
+Sensei works with no credentials at all (it says `rule` instead of `written for you`). To let it write:
+
+- **CoreWeave Forge Inference:** run `wandb login` (writes `~/.netrc`) or export `WANDB_API_KEY`. The default model is `zai-org/GLM-5.3-Flash` with reasoning disabled; override with `FORGE_MODEL`, and set `FORGE_PROJECT` to change the Forge project (default `wandb/nihongo-partner`).
 - **OpenAI-compatible endpoint:** export `OPENAI_API_KEY` (plus optional `OPENAI_BASE_URL` and `OPENAI_MODEL`).
 
-Credentials are read strictly inside Vite's Node dev middleware (`vite.config.ts`) and never enter client bundles, `localStorage`, or Git.
+Credentials are read strictly inside Node (`server/credentials.ts`) and never enter client bundles, `localStorage`, or Git. `pnpm dev` mounts the agent into Vite; `pnpm sensei` runs it standalone on port 5179. Callers from any address other than localhost must present the token the server prints at startup (`?sensei=<token>` on the page URL stores it for the session), so `pnpm dev:phone` does not turn your key into an open relay.
+
+### Agent Lens tracing
+
+Every Sensei turn is traced to Forge Agent Lens in `wandb/nihongo-partner` with the `@coreweave/forge-sdk`: one conversation per learner session, one turn per request, each tool call (`get_learner_state`, `lookup_item`, `grade_answer`, `lookup_rule`, `compose_exercise_set`) as its own span, and the model call with token usage. Each turn carries `nihongo.*` attributes (`task`, `mode`, `unit_id`, `persona`, `trap_id`, `source`, `prompt_variant`) so you can slice by trap or by orthography mode. Set `FORGE_TRACING=0` to turn it off.
+
+Five Agent Lens tags watch the conversations for the failure modes that matter for a tutor: `trap-not-named`, `romaji-leak`, `scope-creep`, `wrong-reading`, `learner-stuck`. Their definitions live in [`agentlens/tags.json`](agentlens/tags.json) and are explained in [`agentlens/tags.md`](agentlens/tags.md); `pnpm tags` syncs them to the project and `pnpm tags --dist` prints last week's counts.
+
+### Sensei set: exercises composed from your misses
+
+`compose_exercise_set` (`src/engine/composer.ts`) turns the answer log into a ten-item set: half aimed at the traps you miss most, confusable pairs side by side, nothing three times in a row, typed instead of multiple choice once you have got an item right twice, pitched so you should get roughly 8 of 10 right, and skipping items you just answered correctly. The item choice is deterministic and runs in the browser on the static site; with the server up, the same set comes back traced with a model-written rationale that may only cite the rules the composer applied and the numbers it reported. [`docs/teaching-rationale.md`](docs/teaching-rationale.md) gives the research behind each rule.
+
+## Simulations and evals
+
+To see how Sensei behaves across many learners without waiting for real ones, `sim/` runs rule-based personas (`steady-median`, `rushed-guesser`, `slow-accurate`, `romaji-dependent`, `kana-confuser`, `counter-trap-prone`) through real units: drill, checkpoint, retry, with every miss sent to Sensei. Personas slip into the catalogued traps at persona-specific rates, so the resulting conversations exercise exactly the confusions the tags look for.
+
+```bash
+pnpm sim --no-llm                 # deterministic, offline, seconds; same events, no model calls
+pnpm sim --seed 7                 # traced run against the live agent (needs a W&B key)
+pnpm sim:freeze out/sim/run-7 evals/datasets sim-v1   # freeze a run into committed datasets
+```
+
+The frozen run (`evals/datasets/sim-v1*.jsonl`: 1140 events, 272 agent replies, all synthetic) feeds the Python evals in `evals/` (managed with `uv`):
+
+```bash
+cd evals
+uv run nihongo-evals build-dataset        # publish events, replies, and grading cases as Weave Datasets
+uv run nihongo-evals grading              # deterministic grade() vs LLM (bare) vs LLM (with phonetic facts), as a wandb.EvalTable
+uv run nihongo-evals feedback             # explain_miss / what_to_fix replies: names the trap, no romaji leak, length, English, plus an LLM judge for wrong readings and scope
+uv run nihongo-evals composer             # the composed sets against the teaching rules, plus a judge on the rationale
+```
+
+Every command takes `--dry-run`, which runs the deterministic checks with no network, and that is what CI runs. `pnpm export:eval-cases` and `pnpm export:composer-cases` regenerate the case files from the current curriculum and frozen events. The judge is a different model family from the agent (`Qwen/Qwen3.8-27B` by default, `FORGE_JUDGE_MODEL` to change it).
 
 ## Extending across your 8-week course (and working with coding agents)
 
@@ -78,8 +121,14 @@ src/content/study-path.ts          STUDY_PATH: the guided path derived from LESS
 src/engine/drills.ts               DrillItem: one quiz shape for kana, vocab, cloze, counter, roleplay items
 src/engine/path.ts                 buildStudyPath, soft gating, checkpoint/review selection, readiness summary
 src/engine/                        Number/time/age/yen oracle, romaji-kana normalizer, FSRS-lite store
-src/ui/PathTab.tsx, UnitPlayer.tsx, Checkpoint.tsx, DrillCard.tsx   The guided flow UI
-docs/                              6-hour cram playbook + curriculum architecture guide
+src/engine/events.ts, traps.ts     InteractionEvent log (the contract between app, agent, sims, and evals) and the trap catalog
+src/engine/composer.ts             compose_exercise_set: deterministic set builder shared by browser and server
+src/ui/PathTab.tsx, UnitPlayer.tsx, Checkpoint.tsx, DrillCard.tsx, SenseiSet.tsx   The guided flow UI
+server/                            Sensei agent (tools, prompts, Agent Lens tracing, token-guarded HTTP handler)
+sim/                               Persona simulator that drives the agent through real units
+evals/                             uv package: Weave datasets, EvalTables, LLM judge; committed datasets in evals/datasets/
+agentlens/                         Agent Lens tag definitions and notes
+docs/                              6-hour cram playbook, curriculum architecture guide, teaching rationale for the composer
 .cursor/skills/ & .agents/skills/  In-repo agent skills (add-lesson-pack, cram-coach-session, curriculum-audit)
 ```
 
@@ -91,6 +140,8 @@ docs/                              6-hour cram playbook + curriculum architectur
 ```bash
 pnpm check     # runs tsc -b, curriculum schema/furigana validator, Vitest suite, and secret/path scrub
 pnpm build     # builds static production bundle into dist/
+pnpm sim --no-llm                               # deterministic simulator pass
+cd evals && uv run nihongo-evals grading --dry-run && uv run nihongo-evals feedback --dry-run && uv run nihongo-evals composer --dry-run
 ```
 
 ## License

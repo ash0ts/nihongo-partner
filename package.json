@@ -10,6 +10,12 @@
     "dev:phone": "vite --host --port 5178",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 5178",
+    "sensei": "tsx server/http.ts",
+    "sim": "tsx sim/run.ts",
+    "export:eval-cases": "tsx scripts/export-eval-cases.ts",
+    "export:composer-cases": "tsx scripts/export-composer-cases.ts",
+    "sim:freeze": "tsx scripts/freeze-sim-dataset.ts",
+    "tags": "tsx scripts/agentlens-tags.ts",
     "typecheck": "tsc -b",
     "validate": "tsx scripts/validate-content.ts",
     "scrub": "tsx scripts/scrub-check.ts",
@@ -17,6 +23,7 @@
     "check": "pnpm typecheck && pnpm validate && pnpm test && pnpm scrub"
   },
   "dependencies": {
+    "@coreweave/forge-sdk": "0.1.0-beta.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "zod": "^3.24.2"

@@ -1,0 +1,903 @@
+{
+  "runId": "7-2026-11-18",
+  "seed": 7,
+  "llm": true,
+  "tracing": "wandb/nihongo-partner",
+  "personas": [
+    "steady-median",
+    "rushed-guesser",
+    "slow-accurate",
+    "romaji-dependent",
+    "kana-confuser",
+    "counter-trap-prone"
+  ],
+  "units": [
+    "kana-rows-1",
+    "kana-contrasts",
+    "kana-voicing",
+    "L01-g-g01-wa-desu",
+    "L01-counters",
+    "L02-g-g02-kosoado-matrix",
+    "L02-counters",
+    "L01-checkpoint"
+  ],
+  "events": 1140,
+  "agentOutputs": 272,
+  "errors": 0,
+  "sessions": [
+    {
+      "persona": "slow-accurate",
+      "unitId": "kana-rows-1",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.7,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "kana-rows-1",
+      "drillAccuracy": 0.8,
+      "checkpointScores": [
+        0.9
+      ],
+      "passed": true
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "kana-contrasts",
+      "drillAccuracy": 0.8,
+      "checkpointScores": [
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "kana-voicing",
+      "drillAccuracy": 0.7,
+      "checkpointScores": [
+        0.875
+      ],
+      "passed": true
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "L01-g-g01-wa-desu",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.8333333333333334
+      ],
+      "passed": true
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "L01-counters",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "kana-contrasts",
+      "drillAccuracy": 0.7,
+      "checkpointScores": [
+        0.5,
+        0.5
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "kana-rows-1",
+      "drillAccuracy": 0.5,
+      "checkpointScores": [
+        0.5,
+        0.7
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "kana-rows-1",
+      "drillAccuracy": 0.7,
+      "checkpointScores": [
+        0.7,
+        0.5
+      ],
+      "passed": false
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "L02-g-g02-kosoado-matrix",
+      "drillAccuracy": 0.75,
+      "checkpointScores": [
+        0.6666666666666666,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "L02-counters",
+      "drillAccuracy": 0.75,
+      "checkpointScores": [
+        0.875
+      ],
+      "passed": true
+    },
+    {
+      "persona": "slow-accurate",
+      "unitId": "L01-checkpoint",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.9166666666666666
+      ],
+      "passed": true
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "kana-rows-1",
+      "drillAccuracy": 0.9,
+      "checkpointScores": [
+        0.9
+      ],
+      "passed": true
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "kana-contrasts",
+      "drillAccuracy": 0.7,
+      "checkpointScores": [
+        0.7,
+        0.5
+      ],
+      "passed": false
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "kana-voicing",
+      "drillAccuracy": 0.7,
+      "checkpointScores": [
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "L01-g-g01-wa-desu",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.8333333333333334
+      ],
+      "passed": true
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "L01-counters",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.875
+      ],
+      "passed": true
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "L02-g-g02-kosoado-matrix",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.8333333333333334
+      ],
+      "passed": true
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "kana-voicing",
+      "drillAccuracy": 0.8,
+      "checkpointScores": [
+        0.5,
+        0.5
+      ],
+      "passed": false
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "L02-counters",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.75,
+        0.875
+      ],
+      "passed": true
+    },
+    {
+      "persona": "kana-confuser",
+      "unitId": "L01-checkpoint",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.9166666666666666
+      ],
+      "passed": true
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "L01-g-g01-wa-desu",
+      "drillAccuracy": 0.75,
+      "checkpointScores": [
+        0.8333333333333334
+      ],
+      "passed": true
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "L01-counters",
+      "drillAccuracy": 0.625,
+      "checkpointScores": [
+        0.75,
+        0.75
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "kana-contrasts",
+      "drillAccuracy": 0.6,
+      "checkpointScores": [
+        0.3,
+        0.3
+      ],
+      "passed": false
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "kana-rows-1",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.9
+      ],
+      "passed": true
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "kana-contrasts",
+      "drillAccuracy": 0.8,
+      "checkpointScores": [
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "L02-g-g02-kosoado-matrix",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.6666666666666666,
+        0.8333333333333334
+      ],
+      "passed": true
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "kana-voicing",
+      "drillAccuracy": 0.8,
+      "checkpointScores": [
+        0.625,
+        0.625
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "kana-contrasts",
+      "drillAccuracy": 0.1,
+      "checkpointScores": [
+        0.2,
+        0.2
+      ],
+      "passed": false
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "L02-counters",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.75,
+        0.625
+      ],
+      "passed": false
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "L01-g-g01-wa-desu",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.6666666666666666,
+        0.6666666666666666
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "kana-voicing",
+      "drillAccuracy": 0.4,
+      "checkpointScores": [
+        0.5,
+        0.75
+      ],
+      "passed": false
+    },
+    {
+      "persona": "steady-median",
+      "unitId": "L01-checkpoint",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.6666666666666666,
+        0.75
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "L01-g-g01-wa-desu",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.8333333333333334
+      ],
+      "passed": true
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "L01-counters",
+      "drillAccuracy": 0.625,
+      "checkpointScores": [
+        0.625,
+        0.125
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "L01-counters",
+      "drillAccuracy": 0.375,
+      "checkpointScores": [
+        0.75,
+        0.625
+      ],
+      "passed": false
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "L02-g-g02-kosoado-matrix",
+      "drillAccuracy": 0.875,
+      "checkpointScores": [
+        0.6666666666666666,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "L02-g-g02-kosoado-matrix",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.6666666666666666,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "kana-voicing",
+      "drillAccuracy": 0,
+      "checkpointScores": [
+        0.5,
+        0.25
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "L02-counters",
+      "drillAccuracy": 0.75,
+      "checkpointScores": [
+        0.5,
+        1
+      ],
+      "passed": true
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "L02-counters",
+      "drillAccuracy": 0.5,
+      "checkpointScores": [
+        0.75,
+        0.625
+      ],
+      "passed": false
+    },
+    {
+      "persona": "romaji-dependent",
+      "unitId": "L01-checkpoint",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.9166666666666666
+      ],
+      "passed": true
+    },
+    {
+      "persona": "counter-trap-prone",
+      "unitId": "L01-checkpoint",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.6666666666666666,
+        0.4166666666666667
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "L01-g-g01-wa-desu",
+      "drillAccuracy": 0.375,
+      "checkpointScores": [
+        0.5,
+        0.5
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "L01-counters",
+      "drillAccuracy": 0.5,
+      "checkpointScores": [
+        0.625,
+        0.625
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "L02-g-g02-kosoado-matrix",
+      "drillAccuracy": 0.625,
+      "checkpointScores": [
+        0.5,
+        0.5
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "L02-counters",
+      "drillAccuracy": 0.375,
+      "checkpointScores": [
+        0.125,
+        0.375
+      ],
+      "passed": false
+    },
+    {
+      "persona": "rushed-guesser",
+      "unitId": "L01-checkpoint",
+      "drillAccuracy": 1,
+      "checkpointScores": [
+        0.3333333333333333,
+        0.6666666666666666
+      ],
+      "passed": false
+    }
+  ],
+  "trapStats": [
+    {
+      "trapId": "year-4-yonensei",
+      "attempts": 19,
+      "misses": 13,
+      "missRate": 0.6842105263157895,
+      "lastMissAt": "2026-11-18T09:03:29.101Z"
+    },
+    {
+      "trapId": "age-20-hatachi",
+      "attempts": 31,
+      "misses": 21,
+      "missRate": 0.6774193548387096,
+      "lastMissAt": "2026-11-18T09:52:02.952Z"
+    },
+    {
+      "trapId": "pair-sa-ki",
+      "attempts": 36,
+      "misses": 24,
+      "missRate": 0.6666666666666666,
+      "lastMissAt": "2026-11-18T09:10:52.946Z"
+    },
+    {
+      "trapId": "pair-ha-ho",
+      "attempts": 27,
+      "misses": 17,
+      "missRate": 0.6296296296296297,
+      "lastMissAt": "2026-11-18T09:11:04.586Z"
+    },
+    {
+      "trapId": "pair-shi-tsu",
+      "attempts": 20,
+      "misses": 12,
+      "missRate": 0.6,
+      "lastMissAt": "2026-11-18T09:10:57.715Z"
+    },
+    {
+      "trapId": "minute-pun-fun",
+      "attempts": 60,
+      "misses": 32,
+      "missRate": 0.5333333333333333,
+      "lastMissAt": "2026-11-18T09:52:16.733Z"
+    },
+    {
+      "trapId": "pair-so-n",
+      "attempts": 27,
+      "misses": 14,
+      "missRate": 0.5185185185185185,
+      "lastMissAt": "2026-11-18T09:10:09.192Z"
+    },
+    {
+      "trapId": "hour-9-kuji",
+      "attempts": 12,
+      "misses": 6,
+      "missRate": 0.5,
+      "lastMissAt": "2026-11-18T09:16:09.192Z"
+    },
+    {
+      "trapId": "hour-7-shichiji",
+      "attempts": 6,
+      "misses": 3,
+      "missRate": 0.5,
+      "lastMissAt": "2026-11-18T09:16:12.818Z"
+    },
+    {
+      "trapId": "hundreds-voicing",
+      "attempts": 71,
+      "misses": 33,
+      "missRate": 0.4647887323943662,
+      "lastMissAt": "2026-11-18T09:34:16.030Z"
+    },
+    {
+      "trapId": "pair-ne-re-wa",
+      "attempts": 20,
+      "misses": 9,
+      "missRate": 0.45,
+      "lastMissAt": "2026-11-18T09:10:42.990Z"
+    },
+    {
+      "trapId": "voicing-marks",
+      "attempts": 108,
+      "misses": 48,
+      "missRate": 0.4444444444444444,
+      "lastMissAt": "2026-11-18T09:54:04.665Z"
+    },
+    {
+      "trapId": "pair-u-wa-fu",
+      "attempts": 23,
+      "misses": 10,
+      "missRate": 0.43478260869565216,
+      "lastMissAt": "2026-11-18T09:11:01.959Z"
+    },
+    {
+      "trapId": "pair-ma-mu-a",
+      "attempts": 25,
+      "misses": 10,
+      "missRate": 0.4,
+      "lastMissAt": "2026-11-18T09:11:06.632Z"
+    },
+    {
+      "trapId": "sokuon-long-vowel",
+      "attempts": 47,
+      "misses": 18,
+      "missRate": 0.3829787234042553,
+      "lastMissAt": "2026-11-18T09:53:56.475Z"
+    },
+    {
+      "trapId": "pair-nu-me",
+      "attempts": 19,
+      "misses": 7,
+      "missRate": 0.3684210526315789,
+      "lastMissAt": "2026-11-18T09:10:48.647Z"
+    },
+    {
+      "trapId": "pair-ru-ro",
+      "attempts": 11,
+      "misses": 4,
+      "missRate": 0.36363636363636365,
+      "lastMissAt": "2026-11-18T09:11:13.186Z"
+    },
+    {
+      "trapId": "thousands-voicing",
+      "attempts": 30,
+      "misses": 10,
+      "missRate": 0.3333333333333333,
+      "lastMissAt": "2026-11-18T09:36:21.223Z"
+    },
+    {
+      "trapId": "kore-kono",
+      "attempts": 11,
+      "misses": 3,
+      "missRate": 0.2727272727272727,
+      "lastMissAt": "2026-11-18T09:36:23.033Z"
+    },
+    {
+      "trapId": "age-sai-clipping",
+      "attempts": 32,
+      "misses": 8,
+      "missRate": 0.25,
+      "lastMissAt": "2026-11-18T09:52:12.256Z"
+    },
+    {
+      "trapId": "pair-ku-ke-ta",
+      "attempts": 24,
+      "misses": 6,
+      "missRate": 0.25,
+      "lastMissAt": "2026-11-18T09:18:21.811Z"
+    },
+    {
+      "trapId": "particle-wa-ha",
+      "attempts": 22,
+      "misses": 5,
+      "missRate": 0.22727272727272727,
+      "lastMissAt": "2026-11-18T09:51:52.352Z"
+    },
+    {
+      "trapId": "man-grouping",
+      "attempts": 25,
+      "misses": 5,
+      "missRate": 0.2,
+      "lastMissAt": "2026-11-18T09:34:00.405Z"
+    }
+  ],
+  "byPersona": {
+    "steady-median": {
+      "events": 201,
+      "accuracy": 0.6965174129353234,
+      "traps": [
+        {
+          "trapId": "year-4-yonensei",
+          "attempts": 5,
+          "misses": 4,
+          "missRate": 0.8,
+          "lastMissAt": "2026-11-18T09:33:55.097Z"
+        },
+        {
+          "trapId": "age-20-hatachi",
+          "attempts": 7,
+          "misses": 5,
+          "missRate": 0.7142857142857143,
+          "lastMissAt": "2026-11-18T09:34:35.697Z"
+        },
+        {
+          "trapId": "thousands-voicing",
+          "attempts": 9,
+          "misses": 5,
+          "missRate": 0.5555555555555556,
+          "lastMissAt": "2026-11-18T09:12:44.531Z"
+        },
+        {
+          "trapId": "pair-ku-ke-ta",
+          "attempts": 4,
+          "misses": 2,
+          "missRate": 0.5,
+          "lastMissAt": "2026-11-18T09:17:48.813Z"
+        },
+        {
+          "trapId": "pair-sa-ki",
+          "attempts": 4,
+          "misses": 2,
+          "missRate": 0.5,
+          "lastMissAt": "2026-11-18T09:17:42.776Z"
+        }
+      ]
+    },
+    "rushed-guesser": {
+      "events": 239,
+      "accuracy": 0.401673640167364,
+      "traps": [
+        {
+          "trapId": "pair-sa-ki",
+          "attempts": 10,
+          "misses": 10,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:10:52.946Z"
+        },
+        {
+          "trapId": "pair-u-wa-fu",
+          "attempts": 5,
+          "misses": 5,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:11:01.959Z"
+        },
+        {
+          "trapId": "pair-shi-tsu",
+          "attempts": 4,
+          "misses": 4,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:10:57.715Z"
+        },
+        {
+          "trapId": "hour-9-kuji",
+          "attempts": 4,
+          "misses": 4,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:16:09.192Z"
+        },
+        {
+          "trapId": "pair-ne-re-wa",
+          "attempts": 3,
+          "misses": 3,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:10:42.990Z"
+        }
+      ]
+    },
+    "slow-accurate": {
+      "events": 151,
+      "accuracy": 0.8741721854304636,
+      "traps": [
+        {
+          "trapId": "hundreds-voicing",
+          "attempts": 9,
+          "misses": 3,
+          "missRate": 0.3333333333333333,
+          "lastMissAt": "2026-11-18T09:05:06.269Z"
+        },
+        {
+          "trapId": "pair-u-wa-fu",
+          "attempts": 3,
+          "misses": 1,
+          "missRate": 0.3333333333333333,
+          "lastMissAt": "2026-11-18T09:33:21.993Z"
+        },
+        {
+          "trapId": "kore-kono",
+          "attempts": 3,
+          "misses": 1,
+          "missRate": 0.3333333333333333,
+          "lastMissAt": "2026-11-18T09:13:42.331Z"
+        },
+        {
+          "trapId": "pair-ma-mu-a",
+          "attempts": 4,
+          "misses": 1,
+          "missRate": 0.25,
+          "lastMissAt": "2026-11-18T09:32:20.513Z"
+        },
+        {
+          "trapId": "thousands-voicing",
+          "attempts": 4,
+          "misses": 1,
+          "missRate": 0.25,
+          "lastMissAt": "2026-11-18T09:14:56.763Z"
+        }
+      ]
+    },
+    "romaji-dependent": {
+      "events": 202,
+      "accuracy": 0.6287128712871287,
+      "traps": [
+        {
+          "trapId": "pair-sa-ki",
+          "attempts": 11,
+          "misses": 11,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:48:46.079Z"
+        },
+        {
+          "trapId": "pair-so-n",
+          "attempts": 6,
+          "misses": 6,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:49:13.742Z"
+        },
+        {
+          "trapId": "hour-7-shichiji",
+          "attempts": 1,
+          "misses": 1,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:51:20.644Z"
+        },
+        {
+          "trapId": "pair-ha-ho",
+          "attempts": 5,
+          "misses": 4,
+          "missRate": 0.8,
+          "lastMissAt": "2026-11-18T09:48:55.721Z"
+        },
+        {
+          "trapId": "pair-shi-tsu",
+          "attempts": 3,
+          "misses": 2,
+          "missRate": 0.6666666666666666,
+          "lastMissAt": "2026-11-18T09:06:02.624Z"
+        }
+      ]
+    },
+    "kana-confuser": {
+      "events": 153,
+      "accuracy": 0.8104575163398693,
+      "traps": [
+        {
+          "trapId": "pair-ha-ho",
+          "attempts": 7,
+          "misses": 5,
+          "missRate": 0.7142857142857143,
+          "lastMissAt": "2026-11-18T09:42:00.530Z"
+        },
+        {
+          "trapId": "pair-shi-tsu",
+          "attempts": 5,
+          "misses": 3,
+          "missRate": 0.6,
+          "lastMissAt": "2026-11-18T09:41:56.354Z"
+        },
+        {
+          "trapId": "pair-so-n",
+          "attempts": 5,
+          "misses": 3,
+          "missRate": 0.6,
+          "lastMissAt": "2026-11-18T09:41:37.811Z"
+        },
+        {
+          "trapId": "year-4-yonensei",
+          "attempts": 2,
+          "misses": 1,
+          "missRate": 0.5,
+          "lastMissAt": "2026-11-18T09:06:05.945Z"
+        },
+        {
+          "trapId": "pair-ne-re-wa",
+          "attempts": 5,
+          "misses": 2,
+          "missRate": 0.4,
+          "lastMissAt": "2026-11-18T09:42:06.981Z"
+        }
+      ]
+    },
+    "counter-trap-prone": {
+      "events": 194,
+      "accuracy": 0.6907216494845361,
+      "traps": [
+        {
+          "trapId": "year-4-yonensei",
+          "attempts": 7,
+          "misses": 7,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:16:15.455Z"
+        },
+        {
+          "trapId": "hour-7-shichiji",
+          "attempts": 1,
+          "misses": 1,
+          "missRate": 1,
+          "lastMissAt": "2026-11-18T09:41:47.987Z"
+        },
+        {
+          "trapId": "minute-pun-fun",
+          "attempts": 16,
+          "misses": 15,
+          "missRate": 0.9375,
+          "lastMissAt": "2026-11-18T09:16:44.862Z"
+        },
+        {
+          "trapId": "age-20-hatachi",
+          "attempts": 9,
+          "misses": 8,
+          "missRate": 0.8888888888888888,
+          "lastMissAt": "2026-11-18T09:17:29.077Z"
+        },
+        {
+          "trapId": "hundreds-voicing",
+          "attempts": 13,
+          "misses": 7,
+          "missRate": 0.5384615384615384,
+          "lastMissAt": "2026-11-18T09:42:44.554Z"
+        }
+      ]
+    }
+  },
+  "source": "sim-v1 frozen from simulator run"
+}
