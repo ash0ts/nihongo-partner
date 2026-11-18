@@ -49,7 +49,13 @@ function base(): string {
   return "";
 }
 
+/** GitHub Pages can never host the agent; skip the probe there so the console stays clean. */
+function staticHostOnly(): boolean {
+  return typeof window !== "undefined" && /\.github\.io$/.test(window.location.hostname);
+}
+
 export async function fetchTutorStatus(): Promise<TutorStatus | null> {
+  if (staticHostOnly()) return null;
   try {
     const r = await fetch(`${base()}/api/tutor/status`, { headers: { Accept: "application/json" } });
     if (!r.ok) return null;
