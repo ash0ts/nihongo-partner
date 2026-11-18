@@ -1,0 +1,164 @@
+{
+  "url": "http://127.0.0.1:5191/",
+  "slug": "nihongo-sensei",
+  "label": "Nihongo Partner",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "accent": "#B91C1C",
+  "ink": "#1C1917",
+  "snow": false,
+  "serve": {
+    "command": "pnpm exec vite --host 127.0.0.1 --port 5191 --strictPort",
+    "cwd": "..",
+    "env": {
+      "FORGE_PROJECT": "wandb/nihongo-sensei"
+    },
+    "ready_ms": 40000
+  },
+  "steps": [
+    {
+      "chapter": "Nihongo Partner",
+      "kicker": "01",
+      "subtitle": "A Genki I cram tutor with a Sensei behind it",
+      "lines": [
+        "Kana, numbers, time, age, yen, こそあど",
+        "Miss an item, ask the Sensei why",
+        "Every Sensei turn is traced to Forge Agent Lens"
+      ],
+      "tag": "The app",
+      "question": "Does the premise land before the first click?"
+    },
+    {
+      "caption": "The Study Path. Lesson 0 to 2, in order.",
+      "ms": 1800
+    },
+    {
+      "callout": "[data-testid=\"sensei-set-card\"]",
+      "text": "<b>Sensei set</b> builds ten items from your own misses. Nothing logged yet, so it waits.",
+      "caption": "Runs on a phone with no server",
+      "ms": 3000
+    },
+    {
+      "chapter": "One miss",
+      "kicker": "02",
+      "subtitle": "Answer wrong on purpose, then ask why",
+      "tag": "One miss",
+      "question": "Is the explanation specific enough to be worth a tap?"
+    },
+    {
+      "scroll": "li:has-text(\"Numbers in use: clock time\")",
+      "ms": 800
+    },
+    {
+      "click": "li:has-text(\"Numbers in use: clock time\") button:has-text(\"Jump here\")",
+      "caption": "Jump to clock time, age and school year",
+      "ms": 1200
+    },
+    {
+      "click": "button:has-text(\"Jump and flag\")",
+      "caption": "The path flags what was skipped",
+      "ms": 1400
+    },
+    {
+      "click": "button:has-text(\"Start micro-drill\")",
+      "caption": "Ten typed items",
+      "ms": 1500
+    },
+    {
+      "type": "input[type=text]",
+      "text": "よんじ",
+      "enter": true,
+      "caption": "2:05, answered as four o'clock",
+      "ms": 1200
+    },
+    {
+      "wait_for": "text=Not quite"
+    },
+    {
+      "click": "button:has-text(\"Why was that wrong?\")",
+      "caption": "Ask the Sensei",
+      "ms": 600
+    },
+    {
+      "wait_for": "text=/Sensei \\((written for you|rule)/",
+      "timeout": 40000
+    },
+    {
+      "callout": "text=/Sensei \\((written for you|rule)/ >> xpath=..",
+      "text": "Written by the model from the item's own breakdown, <b>にじ + ごふん</b>. It is told never to describe kana or readings from memory.",
+      "caption": "Under 40 words, grounded in the item",
+      "ms": 3600
+    },
+    {
+      "hover": "button:has-text(\"Next (Enter)\")",
+      "ms": 300
+    },
+    {
+      "hover": "button:has-text(\"Next (Enter)\")",
+      "ms": 300
+    },
+    {
+      "still": "sensei-explain",
+      "ms": 1200
+    },
+    {
+      "chapter": "Your set",
+      "kicker": "03",
+      "subtitle": "Ten items built from what you missed",
+      "tag": "Your set",
+      "question": "Would you trust this set more than a random drill?"
+    },
+    {
+      "click": "button:has-text(\"Back to path\")",
+      "caption": "Back on the path",
+      "ms": 1200
+    },
+    {
+      "click": "[data-testid=\"sensei-set-card\"] button:has-text(\"Build my set\")",
+      "caption": "Build a set from the answer log",
+      "ms": 600
+    },
+    {
+      "wait_for": "[data-testid=\"sensei-set-card\"] >> text=/Written for you|Rule-based/",
+      "timeout": 40000
+    },
+    {
+      "callout": "[data-testid=\"sensei-set-card\"]",
+      "text": "The miss comes back first. The rationale may cite only the rules the composer applied and the numbers it reported; the chips name the rules.",
+      "caption": "Half the set aims at your errors",
+      "ms": 3800
+    },
+    {
+      "still": "sensei-set",
+      "ms": 800
+    },
+    {
+      "click": "[data-testid=\"sensei-set-card\"] button:has-text(\"Start set\")",
+      "caption": "Play it like any drill",
+      "ms": 1600
+    },
+    {
+      "still": "sensei-player",
+      "ms": 1200
+    },
+    {
+      "chapter": "Behind it",
+      "kicker": "04",
+      "subtitle": "Every turn you just saw is a conversation in Agent Lens",
+      "lines": [
+        "One conversation per learner session",
+        "Six tags that name the failures",
+        "Tool calls, learner question, reply, in order"
+      ],
+      "tag": "Agent Lens",
+      "question": "Can you find the turn you just caused without help?"
+    }
+  ],
+  "chapter_pill": {
+    "top": "auto",
+    "bottom": "28px",
+    "left": "24px"
+  }
+}

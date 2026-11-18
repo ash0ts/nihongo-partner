@@ -34,7 +34,9 @@ Keep note under 20 words."""
 
 def allowed_numbers(row: dict) -> list[int]:
     facts = row["set"].get("facts", {})
-    nums = {len(row["set"]["items"]), facts.get("weakItems", 0), facts.get("reviewDue", 0), facts.get("fadedToTyped", 0), facts.get("inBand", 0), facts.get("eventsSeen", 0)}
+    nums = {len(row["set"]["items"]), facts.get("weakItems", 0), facts.get("recentMisses", 0), facts.get("reviewDue", 0), facts.get("fadedToTyped", 0), facts.get("inBand", 0), facts.get("eventsSeen", 0)}
+    for prompt in facts.get("missedPrompts", []) or []:
+        nums.update(int(x) for x in re.findall(r"\d+", prompt))
     for t in facts.get("topTraps", []):
         nums.update({t.get("misses", 0), t.get("attempts", 0)})
         nums.update(int(x.replace(",", "")) for x in re.findall(r"\d[\d,]*", t.get("label", "")))

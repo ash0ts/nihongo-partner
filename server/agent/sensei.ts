@@ -6,7 +6,7 @@ import { type InteractionEvent, summarizeTraps, trailingMissStreak } from "../..
 import { selectDrillItems, type StudyPath } from "../../src/engine/path";
 import { katakanaToHiragana, romajiToHiragana } from "../../src/engine/romaji-kana";
 import { createEmptySnapshot } from "../../src/engine/srs";
-import { getTrap, trapForItem } from "../../src/engine/traps";
+import { getTrap, wrongFormsIn, trapForItem } from "../../src/engine/traps";
 import type {
   ExplainMissRequest,
   ExplainMissResult,
@@ -77,6 +77,16 @@ const MODE_RULE: Record<string, string> = {
  * produce kana that is not present, so prose is not penalised.
  */
 /** Inputs that mean "I give up" rather than a wrong attempt. */
+/** True when the learner typed only kana, digits and punctuation (no romaji, no kanji). */
+function kanaSentence(text: string): boolean {
+  return /[\u3040-\u30ff]/.test(text) && !/[A-Za-z\u4e00-\u9fff\u3400-\u4dbf]/.test(text);
+}
+
+/** Strips spaces and sentence punctuation so two kana spellings compare on the letters alone. */
+function normalizeKana(text: string): string {
+  return text.replace(/[\s\u3000。、！？!?,.「」]/g, "");
+}
+
 const GAVE_UP = /^(|\?|？|わかりません|わからない|わかんない|idk|i don'?t know|dunno|pass|skip|help)$/i;
 
 const META_WORDS = new Set(["kana", "hiragana", "katakana", "kanji", "romaji", "genki", "sensei", "dakuten", "handakuten", "sokuon", "furigana", "yoon"]);
@@ -126,6 +136,7 @@ export function createSensei(opts: SenseiOptions) {
     user: string,
     history: Array<{ role: "user" | "assistant"; content: string }> = [],
     temperature = 0.3,
+    plain = false,
   ): Promise<{ parsed: T; raw: string } | null> {
     if (!opts.creds) return null;
     const creds = opts.creds;
@@ -141,11 +152,28 @@ export function createSensei(opts: SenseiOptions) {
         chatCompletion(
           creds,
           [{ role: "system", content: system.join("\n") }, ...history, { role: "user", content: user }],
-          { temperature, maxTokens: 600 },
+          { temperature, maxTokens: 900, json: !plain },
         ),
       (r) => ({ output: r.content, inputTokens: r.inputTokens, outputTokens: r.outputTokens, responseModel: r.model }),
     );
-    return { parsed: parseJsonObject(res.content) as T, raw: res.content };
+    return { parsed: plain ? ({} as T) : (parseJsonObject(res.content) as T), raw: res.content };
+  }
+
+  /**
+   * Plain-text reply: the facts ride in the system prompt and the learner's own words are the
+   * user message, so the conversation reads naturally in Agent Lens. Returns undefined when
+   * the model echoed the facts, answered with JSON, or produced nothing usable.
+   */
+  async function askPlain(trace: TurnTrace, system: string[], facts: Record<string, unknown>, learnerMessage: string, maxWords: number): Promise<string | undefined> {
+    const sys = [...system, "Facts for this turn (JSON, for you only; never quote it or mention field names):", JSON.stringify(facts), "Reply with the text for the student only: no JSON, no quotes, no preamble."];
+    const llm = await callModel<Record<string, never>>(trace, sys, learnerMessage, [], 0.3, true);
+    const text = llm?.raw.trim().replace(/^"|"$/g, "") ?? "";
+    const reason = !text ? "empty" : text.startsWith("{") || text.includes('"prompt"') ? "echoed_facts" : text.split(/\s+/).length > maxWords * 1.5 ? "too_long" : undefined;
+    if (reason) {
+      trace.setAttributes({ "nihongo.reject_reason": reason, "nihongo.rejected_words": text.split(/\s+/).length });
+      return undefined;
+    }
+    return text;
   }
 
   /* ------------------------------------------------------------------------------------ */
@@ -203,10 +231,11 @@ export function createSensei(opts: SenseiOptions) {
     const promptForMessage = item?.prompt.text ?? item?.prompt.segments?.map((s) => s.text).join("") ?? req.promptText ?? req.itemId;
     const gaveUp = GAVE_UP.test(req.input.trim());
     const wrote = req.input.trim().length > 0 ? `"${req.input}"` : "nothing";
+    const learnerMessage = `I answered ${wrote} for "${promptForMessage}" and it was marked wrong. Why?`;
     return opts.tracer.run(
       {
         conversationId: req.sessionId,
-        userMessage: `I answered ${wrote} for "${promptForMessage}" and it was marked wrong. Why?`,
+        userMessage: learnerMessage,
         model,
         attributes: baseAttrs(req, "explain_miss", { "nihongo.item_id": req.itemId, "nihongo.trap_id": trap?.id, "nihongo.gave_up": gaveUp }),
       },
@@ -233,25 +262,29 @@ export function createSensei(opts: SenseiOptions) {
         const system = [
           "You are a concise Japanese Sensei helping a student cram Genki I Lessons 0-2. The student just answered a drill item wrong.",
           "Explain the specific confusion in under 40 words of plain ENGLISH: contrast what they wrote with the correct answer and say why. No praise, no filler.",
-          "Ground every fact in `itemExplanation` and `knownTrap`: reuse their mnemonic or rule in your own words. Never describe kana stroke shapes or give readings that are not in those fields.",
-          "If `learnerGaveUp` is true the student typed nothing, '?', or わかりません: do not contrast or scold. Give the answer with its mnemonic in one sentence, then one concrete thing to try on the next item.",
+          "Ground every fact in the itemExplanation and knownTrap facts: reuse their mnemonic or rule in your own words. Never describe kana stroke shapes or give readings that are not in those facts.",
+          "If learnerGaveUp is true the student typed nothing, '?', or わかりません: do not contrast or scold. Give the answer with its mnemonic in one sentence, then one concrete thing to try on the next item.",
           MODE_RULE[req.mode] ?? MODE_RULE.classroom,
           ...facts,
-          'Return JSON ONLY: {"explanation": string}.',
         ];
-        const user = JSON.stringify({
-          prompt: promptText,
-          promptInstruction: looked?.promptEn ?? "",
-          learnerWrote: req.input,
-          learnerGaveUp: gaveUp,
-          correctAnswer: expected,
-          itemExplanation: looked?.explanation ?? "",
-          itemWarning: looked?.trapWarning ?? null,
-          knownTrap: rule.trap,
-          learnerState: { missStreak: state.missStreak, topTraps: state.topTraps.slice(0, 3) },
-        });
-        const llm = await callModel<{ explanation?: string }>(trace, system, user);
-        const text = typeof llm?.parsed.explanation === "string" ? llm.parsed.explanation.trim() : "";
+        const text =
+          (await askPlain(
+            trace,
+            system,
+            {
+              prompt: promptText,
+              promptInstruction: looked?.promptEn ?? "",
+              learnerWrote: req.input,
+              learnerGaveUp: gaveUp,
+              correctAnswer: expected,
+              itemExplanation: looked?.explanation ?? "",
+              itemWarning: looked?.trapWarning ?? null,
+              knownTrap: rule.trap,
+              learnerState: { missStreak: state.missStreak, topTraps: state.topTraps.slice(0, 3) },
+            },
+            learnerMessage,
+            40,
+          )) ?? "";
         // Kana-reading items are graded in romaji, so saying `む is "mu"` is the lesson, not a leak.
         const romajiIsTheAnswer = item?.skill === "kana-read";
         const useLlm = text.length > 0 && kanjiFree(text) && (req.mode === "bridge" || romajiIsTheAnswer || romajiFree(text, `${expected} ${req.input}`));
@@ -277,8 +310,15 @@ export function createSensei(opts: SenseiOptions) {
       },
       async (trace) => {
         await tools.getLearnerState(trace, req);
+        // Deterministic first pass: known wrong spellings (きゅうじ, よんねんせい, にじゅっさい) are
+        // looked up as rules so the model grades with the trap in front of it, and the
+        // verdict below is forced to incorrect even if the model waves it through.
+        const wrongHits = kanaSentence(req.userMessage) ? wrongFormsIn(req.userMessage) : [];
+        const wrongRules = await Promise.all(wrongHits.map((h) => tools.lookupRule(trace, h.trap.id)));
+        const wrongLines = wrongHits.map((h, i) => `The student wrote "${h.match}", which is a known mistake. Rule: ${wrongRules[i]?.trap?.rule ?? h.trap.rule} Mark the sentence incorrect and name this in trapNote.`);
         const system = [
           "You are a concise, accurate Japanese Sensei grading a student cramming Genki I Lessons 0-2 before starting Lesson 3.",
+          ...wrongLines,
           "Stay strictly inside beginner polite Japanese (desu / janai desu, wa/ka/no/mo/ne/yo, ko-so-a-do, numbers/time/age/yen).",
           "If the message is not a Japanese sentence to check (English chat, a question about grammar or kanji the student has not reached such as te-form, tai-form, verbs, adjectives, particles ga/ni/de/o, or anything unrelated to Japanese), set inScope to false, do NOT teach it, and in `feedback` say in one sentence that it is beyond Lessons 0-2 and offer to check a sentence using the unlocked patterns instead. Leave `japanese` and `reading` empty in that case.",
           ...facts,
@@ -291,14 +331,30 @@ export function createSensei(opts: SenseiOptions) {
         if (!llm) throw new Error("Live Sensei is not configured.");
         const p = llm.parsed;
         const inScope = p.inScope !== false;
+        const japanese = inScope ? String(p.japanese ?? "") : "";
+        // The model often spots a wrong reading (いま よんじです → よじ), writes the fix into
+        // `japanese`, and still says correct=true. A kana sentence that had to be changed
+        // was not correct, so the learner's own text is the final word.
+        const rewritten = kanaSentence(req.userMessage) && japanese !== "" && normalizeKana(japanese) !== normalizeKana(req.userMessage);
+        const overridden = inScope && Boolean(p.correct) && (rewritten || wrongHits.length > 0);
+        const firstHit = wrongHits[0];
+        const reading = inScope ? String(p.reading ?? "") : "";
+        const modelNote = inScope ? String(p.trapNote ?? "") : "";
+        // Lessons 0-2 learners have not met kanji. If the model slips some in, show the kana
+        // reading as the sentence and swap a kanji trap note for the catalogue rule.
         const result: GradeResult = {
-          correct: inScope && Boolean(p.correct),
-          japanese: inScope ? String(p.japanese ?? "") : "",
-          reading: inScope ? String(p.reading ?? "") : "",
+          correct: inScope && Boolean(p.correct) && !overridden,
+          japanese: kanjiFree(japanese) || !kanjiFree(reading) ? japanese : reading,
+          reading,
           feedback: String(p.feedback ?? ""),
-          trapNote: inScope ? String(p.trapNote ?? "") : "",
+          trapNote: kanjiFree(modelNote) && modelNote ? modelNote : firstHit ? firstHit.trap.rule : "",
         };
-        trace.setAttributes({ "nihongo.graded_correct": result.correct, "nihongo.in_scope": inScope });
+        trace.setAttributes({
+          "nihongo.graded_correct": result.correct,
+          "nihongo.in_scope": inScope,
+          "nihongo.grade_overridden": overridden,
+          ...(firstHit ? { "nihongo.trap_id": firstHit.trap.id } : {}),
+        });
         trace.output(result.feedback || result.japanese);
         return { result, conversationId: trace.conversationId };
       },
@@ -328,12 +384,16 @@ export function createSensei(opts: SenseiOptions) {
         const llm = await callModel<Partial<RoleplayResult>>(trace, system, req.userMessage, req.history ?? [], 0.5);
         if (!llm) throw new Error("Live Sensei is not configured.");
         const p = llm.parsed;
+        const replyJp = String(p.replyJp ?? "");
+        const replyKana = String(p.replyKana ?? "");
+        // The partner speaks in kana for a Lessons 0-2 learner; kanji in replyJp is a leak.
         const result: RoleplayResult = {
-          replyJp: String(p.replyJp ?? ""),
-          replyKana: String(p.replyKana ?? ""),
+          replyJp: kanjiFree(replyJp) || !kanjiFree(replyKana) || !replyKana ? replyJp : replyKana,
+          replyKana,
           replyEn: String(p.replyEn ?? ""),
           coachTip: String(p.coachTip ?? ""),
         };
+        trace.setAttributes({ "nihongo.kanji_swapped": result.replyJp !== replyJp });
         trace.output(result.replyJp);
         return { result, conversationId: trace.conversationId };
       },
@@ -341,10 +401,11 @@ export function createSensei(opts: SenseiOptions) {
   }
 
   async function whatToFix(req: WhatToFixRequest): Promise<{ result: WhatToFixResult; conversationId: string }> {
+    const learnerMessage = `I finished "${req.unitTitle}" and missed ${req.missed.length} ${req.missed.length === 1 ? "item" : "items"}. What should I fix?`;
     return opts.tracer.run(
       {
         conversationId: req.sessionId,
-        userMessage: `I finished "${req.unitTitle}" and missed ${req.missed.length} ${req.missed.length === 1 ? "item" : "items"}. What should I fix?`,
+        userMessage: learnerMessage,
         model,
         attributes: baseAttrs(req, "what_to_fix", { "nihongo.missed": req.missed.length }),
       },
@@ -364,10 +425,9 @@ export function createSensei(opts: SenseiOptions) {
         const system = [
           "You are a concise Japanese Sensei. The student just finished a checkpoint and missed some items.",
           "In under 45 words of plain ENGLISH, name the one or two confusions behind the misses and say what to practise next. No praise, no filler.",
-          "Ground every fact in each miss's `explanation` and in `knownTraps`. Never describe kana stroke shapes or state readings that are not in those fields.",
+          "Ground every fact in each miss's explanation and in knownTraps. Never describe kana stroke shapes or state readings that are not in those facts.",
           MODE_RULE[req.mode] ?? MODE_RULE.classroom,
           ...facts,
-          'Return JSON ONLY: {"summary": string}.',
         ];
         const missedWithRules = await Promise.all(
           req.missed.slice(0, 8).map(async (m) => {
@@ -375,9 +435,7 @@ export function createSensei(opts: SenseiOptions) {
             return { ...m, explanation: looked?.explanation ?? "" };
           }),
         );
-        const user = JSON.stringify({ unit: req.unitTitle, missed: missedWithRules, knownTraps: labels, learnerState: state });
-        const llm = await callModel<{ summary?: string }>(trace, system, user);
-        const text = typeof llm?.parsed.summary === "string" ? llm.parsed.summary.trim() : "";
+        const text = (await askPlain(trace, system, { unit: req.unitTitle, missed: missedWithRules, knownTraps: labels, learnerState: state }, learnerMessage, 45)) ?? "";
         const result: WhatToFixResult = text && kanjiFree(text) ? { ...deterministic, summary: text, source: "llm" } : deterministic;
         trace.setAttributes({ "nihongo.source": result.source });
         trace.output(result.summary);
@@ -387,19 +445,20 @@ export function createSensei(opts: SenseiOptions) {
   }
 
   async function composeSet(req: ComposeRequest): Promise<{ result: ExerciseSet; conversationId: string }> {
+    const learnerMessage = `Build me a ${req.n ?? 10}-item set from my recent answers.`;
     return opts.tracer.run(
       {
         conversationId: req.sessionId,
-        userMessage: `Build me a ${req.n ?? 10}-item set from my recent answers.`,
+        userMessage: learnerMessage,
         model,
         attributes: baseAttrs(req, "compose_set", { "nihongo.events": req.recentEvents?.length ?? 0 }),
       },
       async (trace) => {
         await tools.getLearnerState(trace, req);
         const set = await composeTool(trace, path, req);
-        const { system, user } = rationalePrompt(set);
-        const llm = await callModel<{ rationale?: string }>(trace, [...system, MODE_RULE[req.mode] ?? MODE_RULE.classroom], user);
-        const result = acceptRationale(set, typeof llm?.parsed.rationale === "string" ? llm.parsed.rationale : undefined);
+        const { system, facts: setFacts } = rationalePrompt(set);
+        const rationale = await askPlain(trace, [...system, MODE_RULE[req.mode] ?? MODE_RULE.classroom], setFacts, learnerMessage, 90);
+        const result = acceptRationale(set, rationale);
         trace.setAttributes({
           "nihongo.source": result.source,
           "nihongo.set_items": result.items.length,

@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:5191/",
+  "slug": "nihongo-sensei",
+  "label": "Nihongo Partner",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "accent": "#B91C1C",
+  "ink": "#1C1917",
+  "snow": false,
+  "serve": {
+    "command": "pnpm exec vite --host 127.0.0.1 --port 5191 --strictPort",
+    "cwd": "..",
+    "env": {
+      "FORGE_PROJECT": "wandb/nihongo-sensei"
+    },
+    "ready_ms": 40000
+  },
+  "chapter_pill": {
+    "top": "auto",
+    "bottom": "28px",
+    "left": "24px"
+  },
+  "steps": [
+    {
+      "outro": "Nihongo Partner",
+      "subtitle": "github.com/ash0ts/nihongo-partner",
+      "lines": [
+        "Agent nihongo-sensei in wandb/nihongo-sensei",
+        "Six Agent Lens tags, three EvalTables",
+        "Works on a phone with no server at all"
+      ]
+    }
+  ]
+}

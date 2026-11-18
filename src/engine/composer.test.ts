@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { STUDY_PATH } from "../content/study-path";
 import { composeExerciseSet, itemPool, rationaleIsGrounded } from "./composer";
 import { makeEvent, type InteractionEvent } from "./events";
-import { TRAPS } from "./traps";
+import { TRAPS, trapForItem } from "./traps";
 
 const pool = itemPool(STUDY_PATH);
 
@@ -61,5 +61,19 @@ describe("composeExerciseSet", () => {
     const remedial = composeExerciseSet({ events: recentMisses, pool, mode: "immersion", n: 8, recentWindow: 10 });
     expect(remedial.items.some((c) => c.trapId === "age-20-hatachi")).toBe(true);
     expect(remedial.facts.meanAccuracy).toBeGreaterThan(0.55);
+  });
+});
+
+describe("composeExerciseSet: misses without a catalogued trap", () => {
+  it("brings back a missed item even when no trap is attached and names it", () => {
+    const path = STUDY_PATH;
+    const pool = itemPool(path);
+    const item = pool.find((it) => it.id === "time-0205") ?? pool.find((it) => it.skill === "counter" && !trapForItem(it))!;
+    const events = [makeEvent({ item, sessionId: "t", unitId: item.sourceUnitId, mode: "bridge", input: "よんじ", correct: false, ms: 3000, phase: "drill", now: new Date(1_700_000_000_000) })];
+    const set = composeExerciseSet({ events, pool, mode: "bridge", n: 10 });
+    expect(set.items.some((i) => i.itemId === item.id && i.reason === "target-errors")).toBe(true);
+    expect(set.facts.recentMisses).toBe(1);
+    expect(set.rationale).toContain("You missed 1 item");
+    expect(set.rules).toContain("target-errors");
   });
 });

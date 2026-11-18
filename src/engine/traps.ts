@@ -20,6 +20,12 @@ export interface TrapDef {
    * Used only by the simulator. Returns undefined when no plausible slip exists.
    */
   slip: (item: DrillItem) => string | undefined;
+  /**
+   * Spellings that are wrong wherever they appear in a kana sentence (よんじ for 4:00).
+   * Sentence grading scans for these so a model that waves a wrong reading through still
+   * gets overruled. Keep each pattern specific enough to never match a correct word.
+   */
+  wrongForms?: RegExp[];
 }
 
 const firstKana = (item: DrillItem) => item.acceptedKana[0] ?? "";
@@ -84,6 +90,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => hasKana(item, "よねんせい"),
     slip: () => "よんねんせい",
+    wrongForms: [/よんねんせい/],
   },
   {
     id: "hour-4-yoji",
@@ -92,6 +99,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => isCounterKind(item, "time") && /^(ごぜん|ごご)?よじ/.test(firstKana(item)),
     slip: (item) => firstKana(item).replace(/よじ/, "よんじ"),
+    wrongForms: [/よんじ(?![ゅゃょ])/],
   },
   {
     id: "hour-7-shichiji",
@@ -100,6 +108,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => isCounterKind(item, "time") && /^(ごぜん|ごご)?しちじ/.test(firstKana(item)),
     slip: (item) => firstKana(item).replace(/しちじ/, "なじ"),
+    wrongForms: [/ななじ(?![ゅゃょ])/],
   },
   {
     id: "hour-9-kuji",
@@ -108,6 +117,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => isCounterKind(item, "time") && /^(ごぜん|ごご)?くじ/.test(firstKana(item)),
     slip: (item) => firstKana(item).replace(/くじ/, "きゅうじ"),
+    wrongForms: [/きゅうじ(?![ゅゃょ])/],
   },
   {
     id: "minute-pun-fun",
@@ -116,6 +126,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => isCounterKind(item, "time") && firstKana(item).includes("ぷん"),
     slip: (item) => firstKana(item).replace(/ぷん/, "ふん"),
+    wrongForms: [/(いっ|さん|よん|ろっ|はっ|じゅっ)ふん/, /(に|ご|なな|きゅう)ぷん/],
   },
   {
     id: "age-20-hatachi",
@@ -124,6 +135,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => hasKana(item, "はたち"),
     slip: () => "にじゅっさい",
+    wrongForms: [/にじゅ[うっ]さい/],
   },
   {
     id: "age-sai-clipping",
@@ -132,6 +144,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => isCounterKind(item, "age") && /(いっ|はっ|じゅっ)さい/.test(firstKana(item)),
     slip: (item) => firstKana(item).replace(/いっさい/, "いちさい").replace(/はっさい/, "はちさい").replace(/じゅっさい/, "じゅうさい"),
+    wrongForms: [/(いち|はち|じゅう)さい/],
   },
   {
     id: "hundreds-voicing",
@@ -140,6 +153,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => /さんびゃく|ろっぴゃく|はっぴゃく/.test(firstKana(item)),
     slip: (item) => firstKana(item).replace(/さんびゃく/, "さんひゃく").replace(/ろっぴゃく/, "ろくひゃく").replace(/はっぴゃく/, "はちひゃく"),
+    wrongForms: [/(さん|ろく|はち)ひゃく/],
   },
   {
     id: "thousands-voicing",
@@ -148,6 +162,7 @@ const handTraps: TrapDef[] = [
     category: "counter",
     matches: (item) => /さんぜん|はっせん/.test(firstKana(item)),
     slip: (item) => firstKana(item).replace(/さんぜん/, "さんせん").replace(/はっせん/, "はちせん"),
+    wrongForms: [/(さん|はち)せん/],
   },
   {
     id: "man-grouping",
@@ -193,6 +208,21 @@ export function trapForItem(item: DrillItem): TrapDef | undefined {
 }
 
 /** Plain-data view (no functions) for JSON consumers such as the evals package. */
+/** Known-wrong spellings found in a learner sentence, with the trap that explains each. */
+export function wrongFormsIn(text: string): Array<{ trap: TrapDef; match: string }> {
+  const hits: Array<{ trap: TrapDef; match: string }> = [];
+  for (const trap of TRAPS) {
+    for (const re of trap.wrongForms ?? []) {
+      const m = text.match(re);
+      if (m) {
+        hits.push({ trap, match: m[0] });
+        break;
+      }
+    }
+  }
+  return hits;
+}
+
 export function trapCatalog(): Array<Pick<TrapDef, "id" | "label" | "rule" | "category">> {
   return TRAPS.map(({ id, label, rule, category }) => ({ id, label, rule, category }));
 }

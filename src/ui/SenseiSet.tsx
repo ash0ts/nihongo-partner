@@ -60,7 +60,7 @@ export function SenseiSetCard({ path, events, mode, onStart }: SenseiSetCardProp
     <section className="rounded-lg border border-stone-900 bg-white p-4" data-testid="sensei-set-card">
       <div className="flex items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-stone-900">Sensei set</h3>
-        <span className="mono-label text-[11px] text-stone-500">{events.length} answers logged</span>
+        <span className="mono-label text-[11px] text-stone-500">{events.length} {events.length === 1 ? "answer" : "answers"} logged</span>
       </div>
       <p className="mt-1 text-xs text-stone-600">
         Ten items built from your own misses: the traps you fall for, mixed up, with typing instead of multiple choice once you have shown you know one.

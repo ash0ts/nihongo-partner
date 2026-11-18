@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { STUDY_PATH } from "../content/study-path";
 import { type DrillItem, grade } from "./drills";
 import { appendEvent, makeEvent, makeSessionId, parseEvents, summarizeTraps, trailingMissStreak } from "./events";
-import { TRAPS, getTrap, trapForItem } from "./traps";
+import { TRAPS, getTrap, trapForItem, wrongFormsIn } from "./traps";
 
 const ALL_ITEMS: DrillItem[] = STUDY_PATH.units.flatMap((u) => [...u.drillItems, ...u.checkpointPool]);
 
@@ -62,5 +62,17 @@ describe("interaction events", () => {
     expect(trailingMissStreak(log)).toBe(1);
     const stats = summarizeTraps(log);
     expect(stats[0]).toMatchObject({ trapId: "year-4-yonensei", attempts: 2, misses: 1 });
+  });
+
+  it("finds known wrong spellings in a sentence and leaves correct ones alone", () => {
+    expect(wrongFormsIn("いま きゅうじはんです。").map((h) => h.trap.id)).toEqual(["hour-9-kuji"]);
+    expect(wrongFormsIn("いま よんじです。").map((h) => h.trap.id)).toEqual(["hour-4-yoji"]);
+    expect(wrongFormsIn("わたしは よんねんせいです。").map((h) => h.trap.id)).toEqual(["year-4-yonensei"]);
+    expect(wrongFormsIn("わたしは にじゅっさいです。").map((h) => h.trap.id)).toEqual(["age-20-hatachi"]);
+    expect(wrongFormsIn("よんじゅっさいです。")).toEqual([]);
+    expect(wrongFormsIn("よんじゅうさいです。").map((h) => h.trap.id)).toEqual(["age-sai-clipping"]);
+    expect(wrongFormsIn("きゅうじゅうえんです。")).toEqual([]);
+    expect(wrongFormsIn("いま くじはんです。さんぷん まえです。")).toEqual([]);
+    expect(wrongFormsIn("わたしは はたちです。")).toEqual([]);
   });
 });

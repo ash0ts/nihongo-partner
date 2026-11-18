@@ -73,7 +73,7 @@ Every answer you give is logged as an `InteractionEvent` (`src/engine/events.ts`
 
 Sensei works with no credentials at all (it says `rule` instead of `written for you`). To let it write:
 
-- **CoreWeave Forge Inference:** run `wandb login` (writes `~/.netrc`) or export `WANDB_API_KEY`. The default model is `zai-org/GLM-5.3-Flash` with reasoning disabled; override with `FORGE_MODEL`, and set `FORGE_PROJECT` to change the Forge project (default `wandb/nihongo-sensei`).
+- **CoreWeave Forge Inference:** run `wandb login` (writes `~/.netrc`) or export `WANDB_API_KEY`. The default model is `zai-org/GLM-5.3-Flash` with `reasoning_effort: low` (the endpoint ignores `enable_thinking: false`); override with `FORGE_MODEL`, and set `FORGE_PROJECT` to change the Forge project (default `wandb/nihongo-sensei`).
 - **OpenAI-compatible endpoint:** export `OPENAI_API_KEY` (plus optional `OPENAI_BASE_URL` and `OPENAI_MODEL`).
 
 Credentials are read strictly inside Node (`server/credentials.ts`) and never enter client bundles, `localStorage`, or Git. `pnpm dev` mounts the agent into Vite; `pnpm sensei` runs it standalone on port 5179. Callers from any address other than localhost must present the token the server prints at startup (`?sensei=<token>` on the page URL stores it for the session), so `pnpm dev:phone` does not turn your key into an open relay.

@@ -27,20 +27,20 @@ export async function composeTool(trace: TurnTrace, path: StudyPath, req: Compos
   return json as unknown as ExerciseSet;
 }
 
-export function rationalePrompt(set: ExerciseSet): { system: string[]; user: string } {
+export function rationalePrompt(set: ExerciseSet): { system: string[]; facts: Record<string, unknown> } {
   return {
     system: [
       "You are a concise Japanese Sensei. You have just built a short custom drill set for a student cramming Genki I Lessons 0-2.",
       "Write the reason for this set in 2 or 3 plain English sentences a beginner can read. Speak to the student as 'you'.",
-      "Mention ONLY the rules listed in appliedRules and ONLY numbers that appear in facts. Do not mention internal fields like inBand or eventsSeen by name. No praise, no filler, no romaji.",
-      "If facts.eventsSeen is 0 there is no history yet: say this is a starter set that will adapt once the student has answered some items.",
-      'Return JSON ONLY: {"rationale": string}.',
+      "Mention ONLY the rules listed in appliedRules and ONLY numbers that appear in the facts. Do not mention internal field names. No praise, no filler, no romaji.",
+      "If eventsSeen is 0 there is no history yet: say this is a starter set that will adapt once the student has answered some items.",
+      "If recentMisses > 0, open with what the student missed (use missedPrompts to name the items, e.g. '2:05') and say those come back first. Do not describe the set's size or mechanics unless a rule in appliedRules is about it.",
     ],
-    user: JSON.stringify({
+    facts: {
       appliedRules: set.rules.map((r) => ({ id: r, meaning: TEACHING_RULES[r] })),
-      facts: set.facts,
+      ...set.facts,
       itemCount: set.items.length,
-    }),
+    },
   };
 }
 

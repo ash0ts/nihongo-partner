@@ -60,6 +60,10 @@ export interface ExerciseSetFacts {
   eventsSeen: number;
   topTraps: Array<{ trapId: string; label: string; misses: number; attempts: number }>;
   weakItems: number;
+  /** Items whose most recent answer was wrong (any trap or none). They come back first. */
+  recentMisses: number;
+  /** Prompts of up to three of those items, so a rationale can name them ("2:05", "し"). */
+  missedPrompts: string[];
   reviewDue: number;
   fadedToTyped: number;
   inBand: number;
@@ -166,6 +170,12 @@ export function composeExerciseSet(input: ComposeInput): ExerciseSet {
   }
   const byId = new Map(input.pool.map((it) => [it.id, it]));
 
+  // Items whose last answer was wrong, most recent first. A catalogued trap is not required:
+  // missing 2:05 with no trap attached is still the first thing a remedial set should revisit.
+  const lastOutcome = new Map<string, boolean>();
+  for (const e of events) lastOutcome.set(e.itemId, e.correct);
+  const missedIds = [...lastOutcome.entries()].filter(([id, ok]) => !ok && byId.has(id)).map(([id]) => id).reverse();
+
   const trapStats: TrapStat[] = summarizeTraps(events).filter((t) => t.misses > 0);
   const topTraps = trapStats.slice(0, 3);
   const topTrapIds = new Set(topTraps.map((t) => t.trapId));
@@ -225,6 +235,12 @@ export function composeExerciseSet(input: ComposeInput): ExerciseSet {
     }
   }
 
+  // 1b. Any other item the learner last got wrong, most recent first, up to the same budget.
+  for (const id of missedIds) {
+    if ([...chosen.values()].filter((c) => c.reason === "target-errors" || c.reason === "contrast-pairs").length >= weakTarget) break;
+    if (add(byId.get(id), "target-errors")) rules.add("target-errors");
+  }
+
   // 2. Pitch the set: the weak items above sit well below the target, so the rest of the set
   //    comes from items the learner is likely to get right, strongest and longest-unseen
   //    first, until the mean predicted accuracy reaches TARGET_ACCURACY. Those items double
@@ -274,6 +290,8 @@ export function composeExerciseSet(input: ComposeInput): ExerciseSet {
     eventsSeen: events.length,
     topTraps: topTraps.map((t) => ({ trapId: t.trapId, label: getTrap(t.trapId)?.label ?? t.trapId, misses: t.misses, attempts: t.attempts })),
     weakItems: items.filter((i) => i.reason === "target-errors").length,
+    recentMisses: missedIds.length,
+    missedPrompts: missedIds.slice(0, 3).map((id) => promptText(byId.get(id))).filter((t): t is string => Boolean(t)),
     reviewDue: items.filter((i) => i.reason === "spacing").length,
     fadedToTyped: faded,
     inBand,
@@ -293,11 +311,21 @@ export function composeExerciseSet(input: ComposeInput): ExerciseSet {
   };
 }
 
+function promptText(item: DrillItem | undefined): string | undefined {
+  if (!item) return undefined;
+  return item.prompt.text ?? item.prompt.segments?.map((s) => s.text).join("") ?? item.prompt.en;
+}
+
 export function deterministicRationale(facts: ExerciseSetFacts, rules: TeachingRule[]): string {
   const parts: string[] = [];
   if (facts.topTraps.length > 0) {
     const t = facts.topTraps[0];
     parts.push(`You missed ${t.label} ${t.misses} of ${t.attempts} times, so ${facts.weakItems} of these items go after that and the other traps you tripped on.`);
+  } else if (facts.recentMisses > 0) {
+    const named = facts.missedPrompts.length ? ` (${facts.missedPrompts.join(", ")})` : "";
+    parts.push(`You missed ${facts.recentMisses} item${facts.recentMisses === 1 ? "" : "s"}${named}, so ${facts.recentMisses === 1 ? "it comes" : "they come"} back first.`);
+  } else if (facts.eventsSeen === 0) {
+    parts.push("No answers yet, so this is a starter set; it will adapt once you have answered some items.");
   } else {
     parts.push("No misses yet, so this set is a spaced review of what you have already seen.");
   }
@@ -309,7 +337,8 @@ export function deterministicRationale(facts: ExerciseSetFacts, rules: TeachingR
 
 /** Numbers the rationale may mention: anything else is treated as hallucinated. */
 export function allowedNumbers(facts: ExerciseSetFacts, itemCount: number): Set<number> {
-  const nums = new Set<number>([itemCount, facts.weakItems, facts.reviewDue, facts.fadedToTyped, facts.inBand, facts.eventsSeen, Math.round(facts.meanAccuracy * 10), Math.round(facts.meanAccuracy * 100)]);
+  const nums = new Set<number>([itemCount, facts.weakItems, facts.recentMisses, facts.reviewDue, facts.fadedToTyped, facts.inBand, facts.eventsSeen, Math.round(facts.meanAccuracy * 10), Math.round(facts.meanAccuracy * 100)]);
+  for (const p of facts.missedPrompts ?? []) for (const m of p.match(/\d+/g) ?? []) nums.add(Number(m));
   for (const t of facts.topTraps) {
     nums.add(t.misses);
     nums.add(t.attempts);

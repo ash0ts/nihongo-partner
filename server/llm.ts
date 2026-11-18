@@ -19,8 +19,8 @@ export interface ChatOptions {
 }
 
 /**
- * One OpenAI-compatible chat call. Forge Serverless Inference gets thinking disabled so
- * tutor turns stay fast; any other provider gets the plain payload.
+ * One OpenAI-compatible chat call. Forge Serverless Inference gets reasoning effort turned
+ * down so tutor turns stay fast; any other provider gets the plain payload.
  */
 export async function chatCompletion(
   creds: TutorCredentials,
@@ -41,8 +41,12 @@ export async function chatCompletion(
   };
   if (opts.json !== false) payload.response_format = { type: "json_object" };
   if (creds.provider === "forge-inference") {
+    // GLM-5.3-Flash on Forge Inference ignores enable_thinking/thinking:disabled and still
+    // spends hundreds of reasoning tokens (sometimes the whole max_tokens budget, which
+    // comes back as an empty reply). reasoning_effort "low" is the knob it honours: ~5
+    // reasoning tokens per turn, measured 2026-11-18.
+    payload.reasoning_effort = "low";
     payload.chat_template_kwargs = { enable_thinking: false };
-    payload.thinking = { type: "disabled" };
   }
 
   const upstream = await fetch(`${creds.baseUrl}/chat/completions`, {
