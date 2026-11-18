@@ -22,6 +22,12 @@ import { SenseiTab } from "./ui/SenseiTab";
 import { SprintTab } from "./ui/SprintTab";
 import { VocabTab } from "./ui/VocabTab";
 
+const MODE_SHORT: Record<DisplayMode, string> = {
+  bridge: "Romaji",
+  classroom: "Furigana",
+  immersion: "Immersion",
+};
+
 const NAV_TABS: Array<{ id: AppTab; label: string }> = [
   { id: "path", label: "Study Path" },
   { id: "sprint", label: "Reference: 6-Hr Plan" },
@@ -36,6 +42,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<AppTab>("path");
   const [progress, setProgress] = useState<ProgressSnapshot>(() => loadProgress());
   const [senseiScenarioId, setSenseiScenarioId] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const updateProgress = (updater: (prev: ProgressSnapshot) => ProgressSnapshot) => {
@@ -147,38 +154,48 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-stone-50 text-stone-900">
-      {/* Sticky Top Control Bar */}
-      <header className="sticky top-0 z-20 border-b border-stone-300 bg-stone-50/95 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-baseline gap-2.5">
-              <h1 className="text-lg font-bold tracking-tight text-stone-900">Nihongo Partner</h1>
-              <span className="mono-label text-xs text-stone-500">
+      {/* Sticky Top Control Bar: one title row, one scrollable nav row; settings fold away on phones */}
+      <header className="sticky top-0 z-20 border-b border-stone-300 bg-stone-50/95 backdrop-blur pt-[env(safe-area-inset-top)]">
+        <div className="mx-auto max-w-6xl px-3 py-2 sm:px-4">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-baseline gap-2.5">
+              <h1 className="truncate text-base font-bold tracking-tight text-stone-900 sm:text-lg">Nihongo Partner</h1>
+              <span className="mono-label hidden text-xs text-stone-500 md:inline">
                 Genki I Cram (L0-L2) -&gt; 8-Week Course Engine
               </span>
             </div>
 
-            {/* Global Orthography & Audio Controls */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Settings: inline on desktop, behind a toggle on phones */}
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((v) => !v)}
+              aria-expanded={settingsOpen}
+              className="mono-label rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:bg-stone-100 cursor-pointer md:hidden"
+            >
+              {settingsOpen ? "Close" : `${MODE_SHORT[progress.displayMode]} · ${progress.slowAudio ? "slow" : "1.0x"}`}
+            </button>
+
+            <div className={`${settingsOpen ? "flex" : "hidden"} w-full flex-wrap items-center gap-2 pt-2 md:flex md:w-auto md:pt-0`}>
               <div className="flex rounded-md border border-stone-300 bg-white p-0.5 text-xs">
                 {(
                   [
-                    ["bridge", "Romaji Bridge (Hrs 1-4)"],
-                    ["classroom", "L3 Class Mode (Furigana, No Romaji)"],
-                    ["immersion", "Immersion"],
+                    ["bridge", "Romaji Bridge", "Romaji Bridge (Hrs 1-4)"],
+                    ["classroom", "Furigana", "L3 Class Mode (Furigana, No Romaji)"],
+                    ["immersion", "Immersion", "Immersion"],
                   ] as const
-                ).map(([m, label]) => (
+                ).map(([m, shortLabel, longLabel]) => (
                   <button
                     key={m}
                     type="button"
                     onClick={() => handleSwitchMode(m)}
-                    className={`rounded px-2.5 py-1 font-medium transition cursor-pointer ${
+                    className={`rounded px-2.5 py-1.5 font-medium transition cursor-pointer ${
                       progress.displayMode === m
                         ? "bg-stone-900 text-white"
                         : "text-stone-600 hover:text-stone-900"
                     }`}
                   >
-                    {label}
+                    <span className="lg:hidden">{shortLabel}</span>
+                    <span className="hidden lg:inline">{longLabel}</span>
                   </button>
                 ))}
               </div>
@@ -186,7 +203,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleToggleSlowAudio}
-                className={`mono-label rounded border px-2.5 py-1 text-xs font-medium cursor-pointer ${
+                className={`mono-label rounded border px-2.5 py-1.5 text-xs font-medium cursor-pointer ${
                   progress.slowAudio
                     ? "border-amber-600 bg-amber-100 text-amber-950"
                     : "border-stone-300 bg-white text-stone-700"
@@ -199,14 +216,14 @@ export default function App() {
                 type="button"
                 onClick={handleExportProgress}
                 title="Export progress.json so coding agents can inspect your shaky items"
-                className="mono-label rounded border border-stone-300 bg-white px-2.5 py-1 text-xs text-stone-700 hover:bg-stone-100 cursor-pointer"
+                className="mono-label rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:bg-stone-100 cursor-pointer"
               >
                 Export JSON
               </button>
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="mono-label rounded border border-stone-300 bg-white px-2.5 py-1 text-xs text-stone-700 hover:bg-stone-100 cursor-pointer"
+                className="mono-label rounded border border-stone-300 bg-white px-2.5 py-1.5 text-xs text-stone-700 hover:bg-stone-100 cursor-pointer"
               >
                 Import
               </button>
@@ -223,14 +240,17 @@ export default function App() {
             </div>
           </div>
 
-          {/* Primary Navigation Tabs */}
-          <nav className="mt-3 flex flex-wrap gap-1.5">
+          {/* Primary Navigation Tabs: single scrollable row on phones, wraps on wide screens */}
+          <nav className="scrollbar-none -mx-3 mt-2 flex gap-1.5 overflow-x-auto px-3 sm:mx-0 sm:flex-wrap sm:px-0">
             {NAV_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setSettingsOpen(false);
+                }}
+                className={`shrink-0 whitespace-nowrap rounded-md px-3 py-1.5 text-xs font-semibold transition cursor-pointer ${
                   activeTab === tab.id
                     ? "bg-stone-900 text-white"
                     : "bg-stone-200/70 text-stone-700 hover:bg-stone-200"
@@ -243,7 +263,7 @@ export default function App() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-3 py-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-6">
         {activeTab === "path" && (
           <PathTab
             path={STUDY_PATH}

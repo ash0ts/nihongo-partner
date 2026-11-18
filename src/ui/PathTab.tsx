@@ -155,9 +155,9 @@ export function PathTab({
         </div>
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
         {/* Unit list */}
-        <div className="space-y-5">
+        <div className="min-w-0 space-y-5">
           {path.groups.map((group) => {
             const units = group.unitIds.map((id) => path.units.find((u) => u.id === id)!).filter(Boolean);
             const g = summary.groups.find((x) => x.groupId === group.id);
@@ -179,14 +179,14 @@ export function PathTab({
                     const status = statuses.get(u.id) ?? "locked";
                     const rec = progress.pathUnits[u.id];
                     return (
-                      <li key={u.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                        <span className={`mono-label shrink-0 rounded border px-2 py-0.5 text-[11px] font-semibold ${STATUS_CLASS[status]}`}>
+                      <li key={u.id} className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 gap-y-2 px-3 py-3 sm:flex sm:px-4 sm:py-2.5">
+                        <span className={`mono-label shrink-0 self-start rounded border px-2 py-0.5 text-[11px] font-semibold sm:self-center ${STATUS_CLASS[status]}`}>
                           {STATUS_LABEL[status]}
                           {status === "passed" && rec && ` ${Math.round(rec.bestScore * 100)}%`}
                           {status === "failed" && rec && ` ${Math.round(rec.lastScore * 100)}%`}
                         </span>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-medium text-stone-900">
+                        <div className="min-w-0 sm:flex-1">
+                          <div className="text-sm font-medium leading-snug text-stone-900">
                             {u.title}
                             {u.optional && <span className="ml-2 text-xs font-normal text-stone-500">optional</span>}
                           </div>
@@ -195,12 +195,12 @@ export function PathTab({
                             {rec && rec.attempts > 0 && ` · ${rec.attempts} attempt${rec.attempts === 1 ? "" : "s"}`}
                           </div>
                         </div>
-                        <div className="flex shrink-0 gap-1.5">
+                        <div className="col-span-2 flex justify-end gap-1.5 sm:col-span-1 sm:shrink-0">
                           {status === "locked" ? (
                             <button
                               type="button"
                               onClick={() => setPendingJump(u)}
-                              className="rounded border border-stone-300 bg-white px-2.5 py-1 text-xs text-stone-600 hover:bg-stone-100 cursor-pointer"
+                              className="rounded border border-stone-300 bg-white px-3 py-1.5 text-xs text-stone-600 hover:bg-stone-100 cursor-pointer"
                             >
                               Jump here
                             </button>
@@ -208,7 +208,7 @@ export function PathTab({
                             <button
                               type="button"
                               onClick={() => setOpenUnitId(u.id)}
-                              className={`rounded px-2.5 py-1 text-xs font-semibold cursor-pointer ${
+                              className={`rounded px-3 py-1.5 text-xs font-semibold cursor-pointer ${
                                 status === "passed"
                                   ? "border border-stone-300 bg-white text-stone-700 hover:bg-stone-100"
                                   : "bg-stone-900 text-white hover:bg-stone-700"
@@ -238,7 +238,7 @@ export function PathTab({
         </div>
 
         {/* Readiness panel */}
-        <aside className="space-y-4 lg:sticky lg:top-28 lg:self-start">
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-28 lg:self-start">
           <section className="rounded-lg border border-stone-300 bg-white p-4">
             <h3 className="text-sm font-semibold text-stone-900">Ready for class?</h3>
             <ul className="mt-2 space-y-1.5">

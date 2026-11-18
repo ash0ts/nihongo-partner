@@ -16,6 +16,16 @@ cd nihongo-partner
 
 Open **http://localhost:5178**. `./try-it.sh` installs dependencies on first run, validates all curriculum packs (`pnpm validate`), and starts the Vite workbench.
 
+## Use it on your phone
+
+The app is a static site, so it runs anywhere a browser does. Three ways in, from easiest to most hands-on:
+
+1. **Hosted (any network):** open **https://ash0ts.github.io/nihongo-partner/** on your phone. Every push to `main` rebuilds and redeploys it through GitHub Pages (`.github/workflows/pages.yml`). Your phone never needs to reach your laptop.
+2. **Add to Home Screen:** the site ships as a PWA. In Safari tap Share, then *Add to Home Screen*; in Chrome on Android use the menu, then *Install app*. It opens full screen with its own icon and keeps working offline after the first load.
+3. **Same Wi-Fi as your laptop:** run `pnpm dev:phone` and open the `Network:` URL Vite prints (something like `http://192.168.1.20:5178`). This is the only mode where the live Sensei tutor works, because the inference proxy lives in the Vite dev server. Corporate or guest Wi-Fi often blocks phone-to-laptop traffic; if the page never loads, use option 1.
+
+Progress lives in each browser's `localStorage`, so the phone and the laptop keep separate records. To move progress between them, tap *Export JSON* on one device and *Import* the file on the other (AirDrop, iCloud Drive, or email all work). On a phone the header folds the mode and audio settings behind a single button at the top right.
+
 ## How to study: the Study Path
 
 The app opens on the **Study Path**, a linear sequence of 34 units generated from the lesson packs. Every unit runs the same loop:

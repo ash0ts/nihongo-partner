@@ -5,6 +5,7 @@ import type { IncomingMessage, ServerResponse } from "node:http";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin } from "vite";
+import { VitePWA } from "vite-plugin-pwa";
 
 interface TutorCredentials {
   apiKey: string;
@@ -211,8 +212,41 @@ function forgeInferenceTutorPlugin(): Plugin {
   };
 }
 
+// GitHub Pages serves the app under /<repo>/; local dev and preview stay at /.
+const base = process.env.BASE_PATH ?? "/";
+
 export default defineConfig({
-  plugins: [react(), tailwindcss(), forgeInferenceTutorPlugin()],
+  base,
+  plugins: [
+    react(),
+    tailwindcss(),
+    forgeInferenceTutorPlugin(),
+    VitePWA({
+      registerType: "autoUpdate",
+      includeAssets: ["favicon.svg", "apple-touch-icon.png"],
+      manifest: {
+        name: "Nihongo Partner",
+        short_name: "Nihongo",
+        description: "Genki I cram app: kana, grammar, counters, and roleplay drills with a guided study path.",
+        theme_color: "#1c1917",
+        background_color: "#fafaf9",
+        display: "standalone",
+        orientation: "portrait",
+        start_url: base,
+        scope: base,
+        icons: [
+          { src: "pwa-192.png", sizes: "192x192", type: "image/png" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png" },
+          { src: "pwa-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+        ],
+      },
+      workbox: {
+        globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        // The tutor proxy is dev-only; never cache its responses.
+        navigateFallbackDenylist: [/^\/api\//],
+      },
+    }),
+  ],
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
