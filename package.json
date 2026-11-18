@@ -1,0 +1,39 @@
+{
+  "name": "nihongo-partner",
+  "version": "0.1.0",
+  "private": false,
+  "license": "MIT",
+  "type": "module",
+  "description": "Extensible Japanese study partner with typed curriculum packs, Kana/Ko-So-A-Do/Counter drills, FSRS-lite mastery tracking, and optional Forge Inference Sensei roleplay.",
+  "scripts": {
+    "dev": "vite --port 5178",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --port 5178",
+    "typecheck": "tsc -b",
+    "validate": "tsx scripts/validate-content.ts",
+    "scrub": "tsx scripts/scrub-check.ts",
+    "test": "vitest run",
+    "check": "pnpm typecheck && pnpm validate && pnpm test && pnpm scrub"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "jsdom": "^26.0.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.19.0",
+    "typescript": "~5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^3.2.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
