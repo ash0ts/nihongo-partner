@@ -108,7 +108,11 @@ uv run nihongo-evals feedback             # explain_miss / what_to_fix replies: 
 uv run nihongo-evals composer             # the composed sets against the teaching rules, plus a judge on the rationale
 ```
 
-Every command takes `--dry-run`, which runs the deterministic checks with no network, and that is what CI runs. `pnpm export:eval-cases` and `pnpm export:composer-cases` regenerate the case files from the current curriculum and frozen events. The judge is a different model family from the agent (`Qwen/Qwen3.8-27B` by default, `FORGE_JUDGE_MODEL` to change it).
+Every command takes `--dry-run`, which runs the deterministic checks with no network, and that is what CI runs. `pnpm export:eval-cases` and `pnpm export:composer-cases` regenerate the case files from the current curriculum and frozen events. The judge is a different model family from the agent (`Qwen/Qwen3.8-27B` by default, `FORGE_JUDGE_MODEL` to change it). `feedback --dataset` also takes a path, so any sim run can be scored.
+
+### Showing it off
+
+`pnpm demo` runs one learner against the live agent and prints the Agent Lens link, the conversation ids, the agent versions, and the current tag counts. [`docs/forge-demo.md`](docs/forge-demo.md) is the ten-minute walkthrough built around it: miss an item in the app, read the conversation and its tool spans, look at what the tags caught, then open the EvalTable that scored the same replies.
 
 ## Extending across your 8-week course (and working with coding agents)
 

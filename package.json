@@ -20,7 +20,8 @@
     "validate": "tsx scripts/validate-content.ts",
     "scrub": "tsx scripts/scrub-check.ts",
     "test": "vitest run",
-    "check": "pnpm typecheck && pnpm validate && pnpm test && pnpm scrub"
+    "check": "pnpm typecheck && pnpm validate && pnpm test && pnpm scrub",
+    "demo": "tsx scripts/forge-demo.ts"
   },
   "dependencies": {
     "@coreweave/forge-sdk": "0.1.0-beta.0",

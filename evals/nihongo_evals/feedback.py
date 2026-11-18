@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from pathlib import Path
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 
@@ -26,7 +27,7 @@ Answer JSON ONLY: {"names_trap": bool, "mode_ok": bool, "reading_ok": bool, "in_
 - names_trap: the reply identifies the specific confusion the learner made (not just restating the answer).
 - mode_ok: if mode is classroom or immersion, the reply spells Japanese in kana, never romaji. In bridge mode this is always true.
 - reading_ok: every Japanese reading or fact stated is correct (yoji, shichiji, kuji, hatachi, sanbyaku, roppyaku, happyaku, topic particle written は).
-- in_scope: nothing beyond Lessons 0-2 (no verbs, adjectives, particles besides は/か/の/も/ね/よ, no kanji beyond digits).
+- in_scope: nothing beyond Lessons 0-2. All kana are in scope (hiragana, katakana, dakuten, small っ, long vowels, loanwords); out of scope means verbs, adjectives, particles besides は/か/の/も/ね/よ, or kanji beyond digits.
 Keep note under 20 words."""
 
 
@@ -89,7 +90,8 @@ def judge_row(client, row: dict, det: dict, traps: dict[str, dict]) -> dict:
 
 def run(args: argparse.Namespace) -> int:
     traps = load_traps()
-    outputs = [r for r in read_jsonl(DATASETS_DIR / args.dataset) if r["task"] in ("explain_miss", "what_to_fix") and r["result"].get("source") == "llm"]
+    dataset_path = Path(args.dataset) if "/" in args.dataset else DATASETS_DIR / args.dataset
+    outputs = [r for r in read_jsonl(dataset_path) if r["task"] in ("explain_miss", "what_to_fix") and r["result"].get("source") == "llm"]
     if args.limit:
         outputs = outputs[: args.limit]
     log(f"{len(outputs)} LLM-written replies to score ({len(traps)} traps known)")
@@ -172,7 +174,7 @@ def summarize(rows: list[dict], judged: bool) -> dict:
 def add_parser(sub: argparse._SubParsersAction) -> None:
     p = sub.add_parser("feedback", help="Score explain_miss / what_to_fix replies (deterministic checks + LLM judge)")
     p.add_argument("--project", default=DEFAULT_PROJECT)
-    p.add_argument("--dataset", default="sim-v1-agent.jsonl")
+    p.add_argument("--dataset", default="sim-v1-agent.jsonl", help="File in evals/datasets, or a path to any agent-outputs.jsonl")
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--concurrency", type=int, default=4)
     p.add_argument("--dry-run", action="store_true", help="Deterministic checks only; no judge, no wandb")

@@ -218,6 +218,7 @@ export function createSensei(opts: SenseiOptions) {
         const system = [
           "You are a concise Japanese Sensei helping a student cram Genki I Lessons 0-2. The student just answered a drill item wrong.",
           "Explain the specific confusion in under 40 words of plain ENGLISH: contrast what they wrote with the correct answer and say why. No praise, no filler.",
+          "Ground every fact in `itemExplanation` and `knownTrap`: reuse their mnemonic or rule in your own words. Never describe kana stroke shapes or give readings that are not in those fields.",
           MODE_RULE[req.mode] ?? MODE_RULE.classroom,
           ...facts,
           'Return JSON ONLY: {"explanation": string}.',
@@ -227,6 +228,8 @@ export function createSensei(opts: SenseiOptions) {
           promptInstruction: looked?.promptEn ?? "",
           learnerWrote: req.input,
           correctAnswer: expected,
+          itemExplanation: looked?.explanation ?? "",
+          itemWarning: looked?.trapWarning ?? null,
           knownTrap: rule.trap,
           learnerState: { missStreak: state.missStreak, topTraps: state.topTraps.slice(0, 3) },
         });
@@ -342,11 +345,18 @@ export function createSensei(opts: SenseiOptions) {
         const system = [
           "You are a concise Japanese Sensei. The student just finished a checkpoint and missed some items.",
           "In under 45 words of plain ENGLISH, name the one or two confusions behind the misses and say what to practise next. No praise, no filler.",
+          "Ground every fact in each miss's `explanation` and in `knownTraps`. Never describe kana stroke shapes or state readings that are not in those fields.",
           MODE_RULE[req.mode] ?? MODE_RULE.classroom,
           ...facts,
           'Return JSON ONLY: {"summary": string}.',
         ];
-        const user = JSON.stringify({ unit: req.unitTitle, missed: req.missed, knownTraps: labels, learnerState: state });
+        const missedWithRules = await Promise.all(
+          req.missed.slice(0, 8).map(async (m) => {
+            const looked = await tools.lookupItem(trace, m.itemId);
+            return { ...m, explanation: looked?.explanation ?? "" };
+          }),
+        );
+        const user = JSON.stringify({ unit: req.unitTitle, missed: missedWithRules, knownTraps: labels, learnerState: state });
         const llm = await callModel<{ summary?: string }>(trace, system, user);
         const text = typeof llm?.parsed.summary === "string" ? llm.parsed.summary.trim() : "";
         const result: WhatToFixResult = text ? { ...deterministic, summary: text, source: "llm" } : deterministic;

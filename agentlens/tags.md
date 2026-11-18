@@ -18,7 +18,7 @@ Every turn Sensei records carries `nihongo.*` custom attributes (`task`, `mode`,
 - Agent overview: <https://forge.coreweave.com/agent-lens/wandb/nihongo-partner>
 - Tag ids (created 2026-11-18): `trap-not-named` `01a1efc0-3214-74b8-8af3-34e51d73895a`, `romaji-leak` `01a1efc0-32a1-7182-98e8-c6cf694e9c21`, `scope-creep` `01a1efc0-332d-7d35-8361-212817441e22`, `wrong-reading` `01a1efc0-33b1-7493-998a-10700b40cf86`, `learner-stuck` `01a1efc0-342c-7a0a-b03b-da1fd49f30c7`.
 
-## First readings
+## First readings (sensei-v1)
 
 After the first traced simulator runs on 2026-11-18 (about 320 conversations across six personas), the judge had assigned: `romaji-leak` 41, `wrong-reading` 20, `trap-not-named` 14, `learner-stuck` 11, `scope-creep` 8 (`pnpm tags --dist`). The `romaji-leak` count included kana-reading drills, where the reply has to state the romaji reading; the criteria now exempt those, so expect that number to drop on the next run. `wrong-reading` is the one to read first: the offline feedback judge found the same class of error (wrong stroke descriptions for ソ and ま, a confused dakuten explanation), which is a prompt problem, not a tagging problem.
 

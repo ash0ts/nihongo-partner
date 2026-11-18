@@ -20,6 +20,7 @@
 - Persona simulator: `pnpm sim --no-llm` (offline) or `pnpm sim --seed 7` (traced to Agent Lens); freeze a run with `pnpm sim:freeze <run-dir> evals/datasets sim-v1`
 - Regenerate eval case files from the curriculum and frozen events: `pnpm export:eval-cases`, `pnpm export:composer-cases`
 - Sync Agent Lens tags from `agentlens/tags.json`: `pnpm tags` (`--check` for CI-style drift detection)
+- Forge walkthrough: `pnpm demo` (traced sim + printed links/ids/tag counts); the script is `docs/forge-demo.md`. Bump `AGENT_VERSION` in `server/tracing.ts` whenever a prompt changes so Agent Lens can compare versions.
 - Python evals (`uv`, run from `evals/`): `uv run nihongo-evals {build-dataset|grading|feedback|composer} [--dry-run]`
 - Full verification gate (run before every commit/push): `pnpm check && pnpm build && pnpm sim --no-llm && (cd evals && uv run nihongo-evals grading --dry-run && uv run nihongo-evals feedback --dry-run && uv run nihongo-evals composer --dry-run)`
 
